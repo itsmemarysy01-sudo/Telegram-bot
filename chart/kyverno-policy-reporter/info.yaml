@@ -1,0 +1,7 @@
+metadata:
+  display-name: Kyverno Policy Reporter Helm chart
+  short-description: Monitoring and observability tool for Kubernetes policy reports
+  featured: false
+  home-url: https://kyverno.github.io/policy-reporter/
+  categories:
+    - security

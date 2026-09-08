@@ -1,0 +1,90 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Trivy Operator Helm chart 0.x
+image: dhi.io/trivy-operator-chart
+variant: helm
+tags:
+  - 0.33.1
+platforms:
+  - linux/amd64
+vars:
+  _APP_VERSION: 0.31.2
+  _COMMIT_SHA: 3d073500cfb4956371435fa4085f2f59b9ff6d57
+  _VERSION: 0.33.2
+  APP_VERSION: 0.31.1
+  CHART_HELM_NAME: trivy-operator-chart
+  COMMIT_SHA: 5746743cb6c49c633c6334fb36060578b599a45d
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  NODE_COLLECTOR_IMAGE_REFERENCE: dhi/node-collector:0.3.1-debian13@sha256:24d3b0d3ed5299c3d375c3d32aeb9a144608bd9d08e791eaf8ae6935732c05b6
+  SEMVER_MAJOR_MINOR_VERSION: "0.33"
+  SEMVER_MAJOR_VERSION: "0"
+  SEMVER_VERSION: 0.33.1
+  TRIVY_IMAGE_REFERENCE: dhi/trivy:0.74.0-debian13-compat@sha256:fa2b9a7afdb0a0f5a2440f7351916be0896e8fb2b9fe3297910c291a5a18528f
+  TRIVY_OPERATOR_IMAGE_REFERENCE: dhi/trivy-operator:0.31.1-debian13@sha256:6bfeda7fada69d569b0069c0bbe94c12125b631cf4e23c7092d137cbaf813f7a
+  VERSION: 0.33.1
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: trivy-operator-chart
+      work-dir: ${source.dir}/helm-charts/deploy/helm
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/aquasecurity/trivy-operator.git#v0.31.1
+            checksum: 5746743cb6c49c633c6334fb36060578b599a45d
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          with:
+            chart:
+              appRef: trivy-operator
+              description: Docker Hardened Images Helm chart for trivy-operator
+              images:
+                - name: trivy-operator
+                  ref: dhi/trivy-operator:0.31.1-debian13@sha256:6bfeda7fada69d569b0069c0bbe94c12125b631cf4e23c7092d137cbaf813f7a
+                - name: trivy
+                  ref: dhi/trivy:0.74.0-debian13-compat@sha256:fa2b9a7afdb0a0f5a2440f7351916be0896e8fb2b9fe3297910c291a5a18528f
+                - name: node-collector
+                  ref: dhi/node-collector:0.3.1-debian13@sha256:24d3b0d3ed5299c3d375c3d32aeb9a144608bd9d08e791eaf8ae6935732c05b6
+              name: trivy-operator-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/aquasecurity/trivy-operator
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          with:
+            chart: .
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: .
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/trivy-operator/config

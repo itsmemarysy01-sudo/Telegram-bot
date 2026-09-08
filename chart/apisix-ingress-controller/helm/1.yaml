@@ -1,0 +1,98 @@
+# syntax=dhi.io/build:2-helm3
+
+name: APISIX Ingress Controller Helm chart 1.x
+image: dhi.io/apisix-ingress-controller-chart
+variant: helm
+tags:
+  - 1.3.0
+platforms:
+  - linux/amd64
+vars:
+  ADC_REFERENCE: dhi/adc:0.30.2-debian13@sha256:17a8eb2c2b7fafb0b0dd917c1aab3aca765b94d57de95295b073da2965571e73
+  APISIX_INGRESS_CONTROLLER_REFERENCE: dhi/apisix-ingress-controller:2.2.0-debian13@sha256:0b63970a73937dd870644232cdcc9c9c801ea5ae795d314165968e8ce4d06866
+  CHART_COMMIT_SHA: 0b7be4cd3ddddb00c79909f776ccbf864954eca1
+  CHART_HELM_NAME: apisix-ingress-controller-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 3.20.2-2
+  SEMVER_MAJOR_MINOR_VERSION: "1.3"
+  SEMVER_MAJOR_VERSION: "1"
+  SEMVER_VERSION: 1.3.0
+  VERSION: 1.3.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: apisix-ingress-controller-chart
+      contents:
+        packages:
+          - bash
+          - coreutils
+          - sed
+          - helm=3.20.2-2
+        files:
+          - url: git+https://github.com/apache/apisix-helm-chart.git#apisix-ingress-controller-1.3.0
+            checksum: 0b7be4cd3ddddb00c79909f776ccbf864954eca1
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/apisix-ingress-controller
+          with:
+            chart:
+              appRef: apisix-ingress-controller
+              description: Docker Hardened Images Helm chart for APISIX Ingress Controller
+              images:
+                - name: apisix-ingress-controller
+                  ref: dhi/apisix-ingress-controller:2.2.0-debian13@sha256:0b63970a73937dd870644232cdcc9c9c801ea5ae795d314165968e8ce4d06866
+                - name: adc
+                  ref: dhi/adc:0.30.2-debian13@sha256:17a8eb2c2b7fafb0b0dd917c1aab3aca765b94d57de95295b073da2965571e73
+              name: apisix-ingress-controller-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/apache/apisix-ingress-controller
+            cmd: prepare
+            registry: dhi.io
+        - name: add image pull secrets
+          work-dir: ${source.dir}/helm-charts/charts/apisix-ingress-controller
+          runs: |
+            set -eux -o pipefail
+
+            sed -i '/^      containers:/i\
+                  {{- with .Values.imagePullSecrets }}\
+                  imagePullSecrets:\
+                    {{- range $.Values.imagePullSecrets }}\
+                    - name: {{ . }}\
+                    {{- end }}\
+                  {{- end }}' templates/deployment.yaml
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/apisix-ingress-controller
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: apisix-ingress-controller
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: apisix-ingress-controller
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/apisix-ingress-controller/config

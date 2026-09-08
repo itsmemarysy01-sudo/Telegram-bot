@@ -1,0 +1,10 @@
+[
+    {
+        "property": "jackson.version",
+        "value": "2.22.2"
+    },
+    {
+        "property": "jackson-databind.version",
+        "value": "2.22.1"
+    }
+]

@@ -1,0 +1,19 @@
+image:
+  repository: ${alertmanager.registry}/${alertmanager.repository}
+  tag: ${alertmanager.tag}@${alertmanager.digest}
+
+podSecurityContext:
+  fsGroup: 65532
+securityContext:
+  runAsUser: 65532
+  runAsNonRoot: true
+  runAsGroup: 65532
+
+configmapReload:
+  image:
+    repository: ${prometheus-config-reloader.registry}/${prometheus-config-reloader.repository}
+    tag: ${prometheus-config-reloader.tag}@${prometheus-config-reloader.digest}
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532

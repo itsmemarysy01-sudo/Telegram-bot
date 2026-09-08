@@ -1,0 +1,42 @@
+===============================================================================
+ 🐳  {{ .Chart.Name | upper }}  —  A Docker Hardened Helm Chart
+===============================================================================
+
+This is a {{ .Chart.Name }} Docker Helm chart built from the {{ (index .Chart.Maintainers 1).Name }}
+{{ .Chart.Name }} Helm chart while using a hardened configuration with
+**Docker Hardened Images**.
+
+To learn more about how to use this Helm chart, visit the upstream documentation:
+{{ (index .Chart.Maintainers 0).URL }}
+===============================================================================
+
+⭐ {{ .Chart.Name | upper }} has been deployed!
+
+Release:      {{ .Release.Name }}
+Namespace:    {{ .Release.Namespace }}
+Chart:        {{ .Chart.Name }} {{ .Chart.Version }}
+App version:  {{ .Chart.AppVersion }}
+
+ℹ️ Checkout the getting started guides at: {{ (index .Chart.Maintainers 0).URL }}
+
+
+You have installed Trivy Operator in the {{ include "trivy-operator.namespace" . }} namespace.
+It is configured to discover Kubernetes workloads and resources in
+{{ tpl .Values.targetNamespaces . | default "all" }} namespace(s).
+
+Inspect created VulnerabilityReports by:
+
+    kubectl get vulnerabilityreports --all-namespaces -o wide
+
+Inspect created ConfigAuditReports by:
+
+    kubectl get configauditreports --all-namespaces -o wide
+
+Inspect the work log of trivy-operator by:
+
+    kubectl logs -n {{ include "trivy-operator.namespace" . }} deployment/{{ include "trivy-operator.fullname" . }}
+
+
+🧹 Uninstall
+$ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+===============================================================================

@@ -1,0 +1,7 @@
+metadata:
+  display-name: Neo4j
+  short-description: Neo4j Cluster Helm Chart
+  featured: false
+  home-url: https://neo4j.com/
+  categories:
+    - databases-and-storage

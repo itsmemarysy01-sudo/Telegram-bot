@@ -1,0 +1,210 @@
+# syntax=dhi.io/build:2-debian13
+
+name: LiteLLM 1.x (dev)
+image: dhi.io/litellm
+variant: dev
+tags:
+  - 1-dev
+  - 1.100-dev
+  - 1.100.0-dev
+  - 1-debian-dev
+  - 1-debian13-dev
+  - 1.100-debian-dev
+  - 1.100-debian13-dev
+  - 1.100.0-debian-dev
+  - 1.100.0-debian13-dev
+platforms:
+  - linux/amd64
+  - linux/arm64
+dates:
+  release: "2026-08-01"
+vars:
+  DEBIAN_EPOCH_MAJOR_MINOR_VERSION: "1.100"
+  DEBIAN_EPOCH_MAJOR_VERSION: "1"
+  DEBIAN_EPOCH_VERSION: 1.100.0
+  PYTHON_VERSION: 3.13.15-1
+  SEMVER_MAJOR_MINOR_VERSION: "1.100"
+  SEMVER_MAJOR_VERSION: "1"
+  SEMVER_VERSION: 1.100.0
+  VERSION: 1.100.0-0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  packages:
+    - '!gawk'
+    - '!libelogind0'
+    - '!mawk'
+    - '!original-awk'
+    - apt
+    - base-files
+    - bash
+    - ca-certificates
+    - ca-certificates-bundle
+    - coreutils
+    - diffutils
+    - dpkg
+    - findutils
+    - grep
+    - libatomic1
+    - libc-bin
+    - libstdc++6
+    - mawk
+    - openssl
+    - perl-base
+    - python-3.13
+    - python-3.13-dev
+    - python3-pip
+    - python3-setuptools
+    - python3-wheel
+    - sed
+    - tzdata
+    - util-linux
+  builds:
+    - name: litellm-runtime-compat
+      contents:
+        repositories:
+          - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+        keyring:
+          - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+        packages:
+          - bash
+          - coreutils
+          - findutils
+          - grep
+          - mawk
+          - python-3.13
+          - litellm=1.100.0-0
+      pipeline:
+        - name: restore runtime contract on installed package payload
+          privileged: true
+          runs: |
+            set -eux -o pipefail
+
+            VENV=/usr/lib/litellm
+            APP=/usr/share/litellm
+
+            "${VENV}/bin/pip" install --no-cache-dir --force-reinstall 'fastapi>=0.136.3,<0.140.7'
+            "${VENV}/bin/pip" install --no-cache-dir --upgrade 'mcp>=1.23.0,<2.0'
+
+            ln -sf ../lib/python3.13/site-packages/nodejs_wheel/bin/node "${VENV}/bin/node"
+
+            ln -sfn "${APP}" /app
+            export PRISMA_HOME_DIR=/app
+            export PRISMA_OFFLINE_MODE=true
+            export PRISMA_USE_GLOBAL_NODE=true
+            export PATH="${VENV}/bin:${PATH}"
+            "${VENV}/bin/python3" -m prisma generate --schema /app/schema.prisma
+
+            versioned_node_modules=$(find /app/.cache/prisma-python/binaries -maxdepth 3 -type d -name node_modules | head -n1)
+            test -x "$versioned_node_modules/.bin/prisma"
+            ln -sfn "$versioned_node_modules" /app/.cache/prisma-python/binaries/node_modules
+        - name: slice litellm dpkg stanza into status.d
+          shell: /bin/bash
+          runs: |
+            set -eux -o pipefail
+
+            pkg=litellm
+            mkdir -p /var/lib/dpkg/status.d
+            grep -q "^Package: ${pkg}$" /var/lib/dpkg/status
+            awk -v pkg="${pkg}" '$0 == "Package: " pkg {f=1} f && !/^(Status|Depends|Pre-Depends|Recommends|Suggests):/{print} /^$/{if(f)exit}' /var/lib/dpkg/status \
+              > /var/lib/dpkg/status.d/${pkg}
+            test -s /var/lib/dpkg/status.d/${pkg}
+        - name: python dependencies sbom
+          uses: sbom@v1
+          privileged: true
+          with:
+            extra-scanners: python-package-cataloger
+            prefix: litellm-python
+            source: /usr/lib/litellm
+      outputs:
+        - source: /usr/lib/litellm
+          target: /usr/lib/litellm
+          uid: 0
+          gid: 0
+        - source: /usr/share/litellm
+          target: /usr/share/litellm
+          uid: 65532
+          gid: 65532
+        - source: /usr/bin/litellm
+          target: /usr/bin/litellm
+          uid: 0
+          gid: 0
+        - source: /usr/bin/supervisord
+          target: /usr/bin/supervisord
+          uid: 0
+          gid: 0
+        - source: /var/lib/dpkg/status.d/litellm
+          target: /var/lib/dpkg/status.d/litellm
+          uid: 0
+          gid: 0
+        - source: /opt/docker/sbom/litellm-python
+          target: /opt/docker/sbom/litellm-python
+          uid: 0
+          gid: 0
+accounts:
+  root: true
+  run-as: root
+  users:
+    - name: nonroot
+      uid: 65532
+      gid: 65532
+    - name: _apt
+      uid: 42
+      gid: 65532
+  groups:
+    - name: nonroot
+      gid: 65532
+      members:
+        - nonroot
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/
+work-dir: /app
+environment:
+  DEBIAN_FRONTEND: noninteractive
+  PATH: /opt/litellm/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+  PRISMA_BINARY_CACHE_DIR: /app/.cache/prisma-python/binaries
+  PRISMA_CLI_PATH: /app/.cache/prisma-python/binaries/node_modules/.bin/prisma
+  PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "true"
+  PRISMA_HIDE_UPDATE_MESSAGE: "true"
+  PRISMA_HOME_DIR: /app
+  PRISMA_OFFLINE_MODE: "true"
+  PRISMA_USE_GLOBAL_NODE: "true"
+  PYTHON_VERSION: 3.13.15-1
+paths:
+  - type: symlink
+    path: /app
+    uid: 0
+    gid: 0
+    source: /usr/share/litellm
+  - type: symlink
+    path: /opt/litellm
+    uid: 0
+    gid: 0
+    source: /usr/lib/litellm
+  - type: directory
+    path: /usr/local/bin
+    uid: 0
+    gid: 0
+  - type: symlink
+    path: /usr/local/bin/litellm
+    uid: 0
+    gid: 0
+    source: /usr/bin/litellm
+annotations:
+  org.opencontainers.image.description: A minimal LiteLLM image - Universal LLM API Gateway
+  org.opencontainers.image.licenses: MIT
+entrypoint:
+  - /app/docker/prod_entrypoint.sh
+cmd:
+  - --port
+  - "4000"
+ports:
+  - 4000/tcp

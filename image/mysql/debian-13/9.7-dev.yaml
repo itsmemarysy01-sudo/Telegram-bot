@@ -1,0 +1,172 @@
+# syntax=dhi.io/build:2-debian13
+
+name: MySQL 9.7.x (dev)
+image: dhi.io/mysql
+variant: dev
+tags:
+  - 9-dev
+  - 9.7-dev
+  - lts-dev
+  - 9.7.2-dev
+  - 9-debian-dev
+  - 9-debian13-dev
+  - 9.7-debian-dev
+  - lts-debian-dev
+  - 9.7-debian13-dev
+  - 9.7.2-debian-dev
+  - lts-debian13-dev
+  - 9.7.2-debian13-dev
+platforms:
+  - linux/amd64
+  - linux/arm64
+dates:
+  release: "2026-04-21"
+vars:
+  ARCH: '#{ target.arch == "amd64" ? "x86_64" : "aarch64" }'
+  GOSU_REFERENCE: dhi/pkg-gosu:1.19-debian13@sha256:c8d3f464708426e928beabdf198ddcbea1bfdcc305c58f3707dfb9e4aac9e590
+  PACKAGE_NAME: mysql-9.7
+  SEMVER_MAJOR_MINOR_VERSION: "9.7"
+  SEMVER_MAJOR_VERSION: "9"
+  SEMVER_VERSION: 9.7.2
+  VERSION: 9.7.2-0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  packages:
+    - '!gawk'
+    - '!libelogind0'
+    - '!mawk'
+    - '!original-awk'
+    - apt
+    - base-files
+    - bash
+    - ca-certificates
+    - coreutils
+    - diffutils
+    - dpkg
+    - findutils
+    - grep
+    - libaio1t64
+    - libc-bin
+    - libcurl4t64
+    - libncurses6
+    - libnuma1
+    - libssl3t64
+    - libstdc++6
+    - libtirpc3t64
+    - mawk
+    - mysql-9.7=9.7.2-0
+    - perl-base
+    - sed
+    - util-linux
+    - zlib1g
+  builds:
+    - name: legacy /opt/mysql layout
+      contents:
+        repositories:
+          - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+        keyring:
+          - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+        packages:
+          - bash
+          - coreutils
+          - findutils
+          - mysql-9.7=9.7.2-0
+      pipeline:
+        - runs: |
+            set -eux -o pipefail
+
+            mkdir -p /opt/mysql/bin /opt/mysql/lib/mysql /opt/mysql/share
+
+            ln -sfn "/usr/share/mysql-9.7" "/opt/mysql/share/mysql-9.7"
+            ln -sfn /usr/lib/mysql/plugin /opt/mysql/lib/mysql/plugin
+            ln -sfn /usr/lib/mysql/private /opt/mysql/lib/mysql/private
+
+            for bin in /usr/bin/mysql* /usr/bin/my_* /usr/bin/myisam* /usr/bin/ibd2sdi /usr/bin/innochecksum /usr/bin/comp_err /usr/bin/perror; do
+              [ -e "${bin}" ] || continue
+              ln -sfn "${bin}" "/opt/mysql/bin/$(basename "${bin}")"
+            done
+            ln -sfn /usr/sbin/mysqld /opt/mysql/bin/mysqld
+      outputs:
+        - source: /opt/mysql
+          target: /opt/mysql
+          uid: 0
+          gid: 0
+  artifacts:
+    - name: dhi.io/pkg-gosu:1.19-debian13@sha256:c8d3f464708426e928beabdf198ddcbea1bfdcc305c58f3707dfb9e4aac9e590
+      includes:
+        - opt/docker/sbom/gosu
+        - usr/local/sbin/gosu
+      uid: 0
+      gid: 0
+accounts:
+  root: true
+  run-as: root
+  users:
+    - name: mysql
+      uid: 65532
+      gid: 65532
+    - name: _apt
+      uid: 42
+      gid: 65532
+  groups:
+    - name: mysql
+      gid: 65532
+      members:
+        - mysql
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/
+environment:
+  DEBIAN_FRONTEND: noninteractive
+  MYSQLDATA: /var/lib/mysql
+  PATH: /opt/mysql/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+paths:
+  - type: directory
+    path: /var/lib/mysql-files
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+  - type: directory
+    path: /var/lib/mysql
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+  - type: directory
+    path: /run/mysqld
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+  - type: directory
+    path: /var/lib/data/
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+  - type: file
+    path: /usr/local/bin/docker-entrypoint.sh
+    uid: 0
+    gid: 0
+    mode: "0755"
+    source: image/mysql/bin/docker-entrypoint.sh
+  - type: symlink
+    path: /usr/lib/${ARCH}-linux-gnu/libaio.so.1
+    uid: 0
+    gid: 0
+    source: libaio.so.1t64
+annotations:
+  org.opencontainers.image.description: A minimal MySQL image
+  org.opencontainers.image.licenses: GPL-2.0-only
+entrypoint:
+  - /usr/local/bin/docker-entrypoint.sh
+cmd:
+  - mysqld
+ports:
+  - 3306/tcp
+  - 33060/tcp

@@ -1,0 +1,159 @@
+# syntax=dhi.io/build:2-alpine3.22
+
+name: k8s-sidecar 2.x (dev)
+image: dhi.io/k8s-sidecar
+variant: dev
+tags:
+  - 2-alpine3.22-dev
+  - 2.11-alpine3.22-dev
+  - 2.11.2-alpine3.22-dev
+platforms:
+  - linux/amd64
+  - linux/arm64
+vars:
+  COMMIT_SHA: a79d2dcd0b27cfc97b903ac52b5732aa37fa9e01
+  PYTHON_BUILD_REF: dhi/python:3.14.7-alpine3.22-dev@sha256:85ac61ce5be05467eaf30302d3680efe2f10ee4708e3fce2dec53b9c4fab12c8
+  PYTHON_REF: dhi/python:3.14.7-alpine3.22@sha256:b80f89598c97dd51364d287894bbc09943167ecedd39b3f029a15cda5be8283f
+  SEMVER_MAJOR_MINOR_VERSION: "2.11"
+  SEMVER_MAJOR_VERSION: "2"
+  SEMVER_VERSION: 2.11.2
+  VERSION: 2.11.2
+contents:
+  repositories:
+    - https://dl-cdn.alpinelinux.org/alpine/v3.22/main
+    - https://dl-cdn.alpinelinux.org/alpine/v3.22/community
+  packages:
+    - apk-tools
+    - bash
+    - busybox
+    - ca-certificates-bundle
+    - coreutils
+    - findutils
+    - libffi
+    - tzdata
+  builds:
+    - name: k8s-sidecar
+      uses: dhi.io/python:3.14.7-alpine3.22-dev@sha256:85ac61ce5be05467eaf30302d3680efe2f10ee4708e3fce2dec53b9c4fab12c8
+      contents:
+        files:
+          - url: git+https://github.com/kiwigrid/k8s-sidecar.git#2.11.2
+            checksum: a79d2dcd0b27cfc97b903ac52b5732aa37fa9e01
+            path: ${source.dir}/k8s-sidecar
+            spdx:
+              name: k8s-sidecar
+              version: 2.11.2
+              packages:
+                - name: k8s-sidecar
+                  purl: pkg:github/kiwigrid/k8s-sidecar@2.11.2
+                  license: MIT
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: create virtual environment
+          runs: |
+            set -eux -o pipefail
+
+            mkdir -p "${target.dir}/app"
+            python3 -m venv "${target.dir}/app/.venv"
+        - name: install python package
+          work-dir: ${source.dir}/k8s-sidecar
+          privileged: true
+          runs: |
+            set -eux -o pipefail
+
+            "${target.dir}/app/.venv/bin/python3" -m pip install --no-cache-dir .
+
+            # Remediate CVEs by upgrading packages
+            "${target.dir}/app/.venv/bin/python3" -m pip install --no-cache-dir "pip==26.2"            # CVE-2026-13346
+            "${target.dir}/app/.venv/bin/python3" -m pip install --no-cache-dir "urllib3==2.7.0"       # CVE-2026-21441, CVE-2026-44431, CVE-2026-44432
+            "${target.dir}/app/.venv/bin/python3" -m pip install --no-cache-dir "cryptography==50.0.0" # CVE-2026-26007, CVE-2026-34073, CVE-2026-39892, CVE-2026-69247, GHSA-537c-gmf6-5ccf
+        - name: clean python cache and tests
+          runs: |
+            set -eux -o pipefail
+
+            # Remove compiled Python files (.pyc, .pyo) and __pycache__ directories
+            # Remove test directories (test, tests) to reduce image size
+            find "${target.dir}/app/.venv" \
+              \( -type d -a \( -name test -o -name tests -o -name __pycache__ \) \) \
+              -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
+              -exec rm -rf '{}' + || true
+        - name: python dependencies sbom
+          uses: sbom@v1
+          with:
+            extra-scanners: python-package-cataloger
+            prefix: k8s-sidecar-python
+            source: /app/.venv
+      outputs:
+        - source: ${target.dir}/app
+          target: /app
+          uid: 0
+          gid: 0
+          mode: "0755"
+        - source: /opt/docker/sbom
+          target: /opt/docker/sbom
+          uid: 0
+          gid: 0
+  artifacts:
+    - name: dhi.io/python:3.14.7-alpine3.22@sha256:b80f89598c97dd51364d287894bbc09943167ecedd39b3f029a15cda5be8283f
+      includes:
+        - opt/**
+        - usr/**
+      excludes:
+        - opt/python*/lib/python*/site-packages/pip
+        - opt/python*/lib/python*/site-packages/pip-*
+      uid: 0
+      gid: 0
+accounts:
+  root: true
+  run-as: root
+  users:
+    - name: nonroot
+      uid: 65532
+      gid: 65532
+  groups:
+    - name: nonroot
+      gid: 65532
+      members:
+        - nonroot
+os-release:
+  name: Docker Hardened Images (Alpine)
+  id: alpine
+  version-id: "3.22"
+  pretty-name: Docker Hardened Images/Alpine Linux v3.22
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/
+work-dir: /app
+environment:
+  PATH: /app/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+  PYTHONUNBUFFERED: "1"
+paths:
+  - type: directory
+    path: /app
+    uid: 0
+    gid: 0
+    mode: "0755"
+  - type: directory
+    path: /tmp/config
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+  - type: directory
+    path: /tmp
+    uid: 0
+    gid: 0
+    mode: "1777"
+  - type: directory
+    path: /etc/config
+    uid: 65532
+    gid: 65532
+    mode: "0755"
+annotations:
+  org.opencontainers.image.description: A minimal k8s-sidecar image
+  org.opencontainers.image.licenses: MIT
+entrypoint:
+  - /app/.venv/bin/python
+  - -u
+  - -m
+  - sidecar
+ports:
+  - 8080/tcp

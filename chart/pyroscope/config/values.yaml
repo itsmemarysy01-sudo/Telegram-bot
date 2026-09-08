@@ -1,0 +1,13 @@
+pyroscope:
+  image:
+    repository: ${pyroscope.registry}/${pyroscope.repository}
+    tag: ${pyroscope.tag}@${pyroscope.digest}
+
+alloy:
+  enabled: false
+
+agent:
+  enabled: false
+
+minio:
+  enabled: false

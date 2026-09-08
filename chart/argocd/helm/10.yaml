@@ -1,0 +1,145 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Argo CD Helm chart 10.x
+image: dhi.io/argocd-chart
+variant: helm
+tags:
+  - 10.8.2
+platforms:
+  - linux/amd64
+vars:
+  ARGOCD_REFERENCE: dhi/argocd:3.5.2-debian13@sha256:b0d923fdafe5244ea85ef29f4d01253594182d594a11b17bd2fad3481e0285f8
+  CHART_COMMIT_SHA: a9855033d3cba30df5278886e3aa7b2a4835aa81
+  CHART_HELM_NAME: argocd-chart
+  DEX_REFERENCE: dhi/dex:2.45.1-debian13@sha256:e2d0a5a47ed742e8ec0c255509939149686c59ca152f30364978bbf32822adf3
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HAPROXY_CHART_REFERENCE: dhi/haproxy-chart:1.30.1@sha256:15192443505d19d378a5cb7203a774e1d706a00271769b22db5c6fc75a7bafa7
+  HELM_VERSION: 4.1.4-2
+  REDIS_CHART_REFERENCE: dhi/redis-chart:23.0.7@sha256:8b3b05ae5db6ceedee31e4263184db3237df3ab68a59b5667fe0160130fd74e0
+  REDIS_EXPORTER_REFERENCE: dhi/redis-exporter:1.91.0-debian13@sha256:a9d2827638a02259465670109966259865d5263d6aa7b49b0f29c1f2c25e195e
+  REDIS_REFERENCE: dhi/redis:8.10.1-debian13-compat@sha256:cf0b7e048a3b065ce18afc2d55aff086e446f45f7b307105abb0c6a1c8714058
+  SEMVER_MAJOR_MINOR_VERSION: "10.8"
+  SEMVER_MAJOR_VERSION: "10"
+  SEMVER_VERSION: 10.8.2
+  VERSION: 10.8.2
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: argocd
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - sed
+          - yq-go
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/argoproj/argo-helm#argo-cd-10.8.2
+            checksum: a9855033d3cba30df5278886e3aa7b2a4835aa81
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/argo-cd
+          with:
+            chart:
+              appRef: argocd
+              dependencies:
+                - alias: redis-ha
+                  condition: redis-ha.enabled
+                  name: redis-ha
+                  ref: dhi/redis-chart:23.0.7@sha256:8b3b05ae5db6ceedee31e4263184db3237df3ab68a59b5667fe0160130fd74e0
+                - alias: haproxy
+                  condition: haproxy.enabled
+                  name: haproxy
+                  ref: dhi/haproxy-chart:1.30.1@sha256:15192443505d19d378a5cb7203a774e1d706a00271769b22db5c6fc75a7bafa7
+              description: Docker Hardened Images Helm chart for Argo CD
+              images:
+                - name: argocd
+                  ref: dhi/argocd:3.5.2-debian13@sha256:b0d923fdafe5244ea85ef29f4d01253594182d594a11b17bd2fad3481e0285f8
+                - name: dex
+                  ref: dhi/dex:2.45.1-debian13@sha256:e2d0a5a47ed742e8ec0c255509939149686c59ca152f30364978bbf32822adf3
+                - name: redis
+                  ref: dhi/redis:8.10.1-debian13-compat@sha256:cf0b7e048a3b065ce18afc2d55aff086e446f45f7b307105abb0c6a1c8714058
+                - name: redis-exporter
+                  ref: dhi/redis-exporter:1.91.0-debian13@sha256:a9d2827638a02259465670109966259865d5263d6aa7b49b0f29c1f2c25e195e
+              name: argocd-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/argoproj/argo-helm
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/argo-cd
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update values
+          uses: yq/patch@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            file: argo-cd/values.yaml
+            patches:
+              - del(.redis-ha.image)
+              - del(.redis-ha.exporter.image)
+              - del(.redis-ha.exporter.tag)
+              - del(.redis-ha.haproxy.image.repository)
+              - del(.redis-ha.haproxy)
+              - del(.redis-ha.redis.masterGroupName)
+              - del(.redis-ha.redis.config)
+              - del(.redis-ha.hardAntiAffinity)
+              - del(.redis-ha.additionalAffinities)
+              - del(.redis-ha.affinity)
+              - del(.redis-ha.tolerations)
+              - del(.redis-ha.topologySpreadConstraints)
+              - del(.redis-ha.containerSecurityContext)
+        - name: Patch templates
+          work-dir: ${source.dir}/helm-charts/charts/argo-cd/templates
+          runs: |
+            set -eux -o pipefail
+
+            sed -i 's/$redisHa.haproxy.enabled/.Values.haproxy.enabled/' _helpers.tpl
+            # HAProxy is a sibling subchart (dhi/haproxy-chart); its Service name is haproxy.fullname, not
+            # "{redis-ha fullname}-haproxy" as in the upstream embedded redis-ha chart.
+            sed -i 's#        {{- printf "%s-haproxy" (include "redis-ha.fullname" $redisHaContext) | trunc 63 | trimSuffix "-" -}}#        {{- include "haproxy.fullname" (dict "Chart" (dict "Name" "haproxy") "Release" .Release "Values" .Values.haproxy) | trunc 63 | trimSuffix "-" -}}#' _helpers.tpl
+            cat "${source.dir}/config/_helpers.redis-ha.append.tpl" >> _helpers.tpl
+        - name: helm login
+          uses: helm/login@v1
+          with:
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          privileged: true
+          with:
+            chart: argo-cd
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: argo-cd
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: argo-cd
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/argocd/config

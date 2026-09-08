@@ -1,0 +1,81 @@
+# syntax=dhi.io/build:2-debian13
+
+image: dhi.io/pkg-git-lfs
+variant: runtime
+tags:
+  - "3"
+  - "3.8"
+  - 3.8.0
+  - 3-debian13
+  - 3.8-debian13
+  - 3.8.0-debian13
+platforms:
+  - linux/amd64
+  - linux/arm64
+vars:
+  COMMIT_SHA: aece9221f8c09221a14395d964806b956289bc07
+  GO_REF: dhi/golang:1.26.8-debian13-dev@sha256:7ea728bef7cfde49a6c0f798f6f611f632f0064aab898f9fa043bdad1d544046
+  SEMVER_MAJOR_MINOR_VERSION: "3.8"
+  SEMVER_MAJOR_VERSION: "3"
+  SEMVER_VERSION: 3.8.0
+  VERSION: 3.8.0
+contents:
+  packages:
+    - '!base-files'
+  builds:
+    - name: git-lfs
+      uses: dhi.io/golang:1.26.8-debian13-dev@sha256:7ea728bef7cfde49a6c0f798f6f611f632f0064aab898f9fa043bdad1d544046
+      contents:
+        files:
+          - url: git+https://github.com/git-lfs/git-lfs.git#v3.8.0
+            checksum: aece9221f8c09221a14395d964806b956289bc07
+            path: /go/src/github.com/git-lfs/git-lfs
+            spdx:
+              name: git-lfs
+              version: 3.8.0
+              packages:
+                - name: git-lfs
+                  purl: pkg:golang/github.com/git-lfs/git-lfs/v3@3.8.0
+                  license: MIT
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: update go dependencies
+          uses: go/bump@v1
+          work-dir: /go/src/github.com/git-lfs/git-lfs
+          with:
+            deps: []
+            download: true
+        - name: test
+          work-dir: /go/src/github.com/git-lfs/git-lfs
+          runs: |
+            set -eux -o pipefail
+
+            CGO_ENABLED=0 go test ./git-lfs.go
+        - name: build
+          work-dir: /go/src/github.com/git-lfs/git-lfs
+          runs: |
+            set -eux -o pipefail
+
+            GOLDFLAGS="-X github.com/git-lfs/git-lfs/v3/config.GitCommit=aece9221f8c09221a14395d964806b956289bc07"
+
+            CGO_ENABLED=0 go build \
+              -ldflags="$GOLDFLAGS" \
+              -o "${target.dir}/usr/local/bin/git-lfs" ./git-lfs.go
+      outputs:
+        - source: ${target.dir}/usr/local/bin/git-lfs
+          target: /usr/local/bin/git-lfs
+          uid: 0
+          gid: 0
+        - source: /opt/docker/sbom/git-lfs
+          target: /opt/docker/sbom/git-lfs
+          uid: 0
+          gid: 0
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/

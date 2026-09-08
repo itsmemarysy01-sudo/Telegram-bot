@@ -1,0 +1,107 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Thanos Helm chart 17.x
+image: dhi.io/thanos-chart
+variant: helm
+tags:
+  - 17.4.0
+platforms:
+  - linux/amd64
+vars:
+  BASH_REFERENCE: dhi/bash:5.2.37-debian13@sha256:25774d43bd1ad6299acf33599e9f0d844f353b9f0e722bd09cd47f7143d85ac7
+  CHART_COMMIT_SHA: cd04b0e93380dcb987c52a214b20cd6864362d9d
+  CHART_HELM_NAME: thanos-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "17.4"
+  SEMVER_MAJOR_VERSION: "17"
+  SEMVER_VERSION: 17.4.0
+  THANOS_REFERENCE: dhi/thanos:0.42.4-debian13@sha256:856e467fe75cea9e275083d61111c39dc35c773d38c415b84252cb6e0762d8f8
+  VERSION: 17.4.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: thanos
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - yq-go
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/docker-hardened-images/helm-charts.git#thanos/17.4.0
+            checksum: cd04b0e93380dcb987c52a214b20cd6864362d9d
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/thanos
+          with:
+            chart:
+              appRef: thanos
+              description: Docker Hardened Images Helm chart for Thanos
+              images:
+                - name: thanos
+                  ref: dhi/thanos:0.42.4-debian13@sha256:856e467fe75cea9e275083d61111c39dc35c773d38c415b84252cb6e0762d8f8
+                - name: bash
+                  ref: dhi/bash:5.2.37-debian13@sha256:25774d43bd1ad6299acf33599e9f0d844f353b9f0e722bd09cd47f7143d85ac7
+              name: thanos-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/docker-hardened-images/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/thanos
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update values
+          uses: yq/patch@v1
+          work-dir: ${source.dir}/helm-charts/thanos
+          with:
+            file: values.yaml
+            patches:
+              - del(.minio)
+        - name: update values
+          uses: yq/patch@v1
+          work-dir: ${source.dir}/helm-charts/thanos
+          with:
+            file: Chart.yaml
+            patches:
+              - del(.dependencies.0)
+        - name: update dependencies
+          uses: helm/cmd@v1
+          privileged: true
+          with:
+            chart: ${source.dir}/helm-charts/thanos
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts
+          with:
+            chart: thanos
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          work-dir: ${source.dir}/helm-charts
+          with:
+            chart: thanos
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/thanos/config

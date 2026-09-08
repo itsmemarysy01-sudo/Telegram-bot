@@ -1,0 +1,101 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Flux Helm chart 2.x
+image: dhi.io/flux-chart
+variant: helm
+tags:
+  - 2.19.0
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: b2c8e7838dd7902b6f7b4925e2d611c756858fc8
+  CHART_HELM_NAME: flux-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  FLUX_CLI_REFERENCE: dhi/flux-cli:2.9.5-debian13@sha256:0eb1a5120bd0ca98cd4cdbdf1eefa550ea6bc6e8fb3215f81708a4c484fff8db
+  FLUXCD_HELM_CONTROLLER_REFERENCE: dhi/fluxcd-helm-controller:1.6.4-debian13@sha256:9342af3d06a4d2a55b24e9f4c9c045303177c9718ea558d3c95becf6fce8e07b
+  FLUXCD_IMAGE_AUTOMATION_CONTROLLER_REFERENCE: dhi/fluxcd-image-automation-controller:1.2.5-debian13@sha256:16921bfb6cb745e65a9a8d50ab91fee56b89b46b8ef68cb9ff33ead8efde6efe
+  FLUXCD_IMAGE_REFLECTOR_CONTROLLER_REFERENCE: dhi/fluxcd-image-reflector-controller:1.2.5-debian13@sha256:46ed29029ae0a5a27f5ee870913ad8f7e9c55e41ba4cde163310f4497bbe9ce7
+  FLUXCD_KUSTOMIZE_CONTROLLER_REFERENCE: dhi/fluxcd-kustomize-controller:1.9.5-debian13@sha256:f5f9bc00e4ac1bddbce3f00ec2ead03f2e1a3bd72b5bcd7095548734804759e3
+  FLUXCD_NOTIFICATION_CONTROLLER_REFERENCE: dhi/fluxcd-notification-controller:1.9.4-debian13@sha256:30b1c533113c9ff6c579b858a90883789bf3af7f43bf95cba9c1af3b3a5d23b7
+  FLUXCD_SOURCE_CONTROLLER_REFERENCE: dhi/fluxcd-source-controller:1.9.5-debian13@sha256:0191a3e75b2f8c9b297d113954ef7ac47e40463d37aaf1ebe4d3bf78bd91e9fc
+  FLUXCD_SOURCE_WATCHER_REFERENCE: dhi/fluxcd-source-watcher:2.2.4-debian13@sha256:3186e34c70799a33c3b6a9774faaca2037ee5942c744f86c75abc82d845d43bd
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "2.19"
+  SEMVER_MAJOR_VERSION: "2"
+  SEMVER_VERSION: 2.19.0
+  VERSION: 2.19.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: flux-chart
+      work-dir: ${source.dir}/helm-charts/charts/flux2
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/fluxcd-community/helm-charts.git#flux2-2.19.0
+            checksum: b2c8e7838dd7902b6f7b4925e2d611c756858fc8
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          with:
+            chart:
+              appRef: flux-cli
+              description: Docker Hardened Images Helm chart for Flux
+              images:
+                - name: flux-cli
+                  ref: dhi/flux-cli:2.9.5-debian13@sha256:0eb1a5120bd0ca98cd4cdbdf1eefa550ea6bc6e8fb3215f81708a4c484fff8db
+                - name: fluxcd-helm-controller
+                  ref: dhi/fluxcd-helm-controller:1.6.4-debian13@sha256:9342af3d06a4d2a55b24e9f4c9c045303177c9718ea558d3c95becf6fce8e07b
+                - name: fluxcd-image-automation-controller
+                  ref: dhi/fluxcd-image-automation-controller:1.2.5-debian13@sha256:16921bfb6cb745e65a9a8d50ab91fee56b89b46b8ef68cb9ff33ead8efde6efe
+                - name: fluxcd-image-reflector-controller
+                  ref: dhi/fluxcd-image-reflector-controller:1.2.5-debian13@sha256:46ed29029ae0a5a27f5ee870913ad8f7e9c55e41ba4cde163310f4497bbe9ce7
+                - name: fluxcd-kustomize-controller
+                  ref: dhi/fluxcd-kustomize-controller:1.9.5-debian13@sha256:f5f9bc00e4ac1bddbce3f00ec2ead03f2e1a3bd72b5bcd7095548734804759e3
+                - name: fluxcd-notification-controller
+                  ref: dhi/fluxcd-notification-controller:1.9.4-debian13@sha256:30b1c533113c9ff6c579b858a90883789bf3af7f43bf95cba9c1af3b3a5d23b7
+                - name: fluxcd-source-controller
+                  ref: dhi/fluxcd-source-controller:1.9.5-debian13@sha256:0191a3e75b2f8c9b297d113954ef7ac47e40463d37aaf1ebe4d3bf78bd91e9fc
+                - name: fluxcd-source-watcher
+                  ref: dhi/fluxcd-source-watcher:2.2.4-debian13@sha256:3186e34c70799a33c3b6a9774faaca2037ee5942c744f86c75abc82d845d43bd
+              name: flux-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/fluxcd/flux2
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          with:
+            chart: .
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: .
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/flux/config

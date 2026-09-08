@@ -1,0 +1,57 @@
+# trivy-operator
+image:
+  registry: ${trivy-operator.registry}
+  repository: ${trivy-operator.repository}
+  tag: ${trivy-operator.tag}@${trivy-operator.digest}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsGroup: 10000
+  runAsUser: 10000
+
+securityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  runAsGroup: 10000
+  runAsUser: 10000
+
+alternateReportStorage:
+  podSecurityContext:
+    runAsUser: 10000
+    fsGroup: 10000
+
+scanJobPodTemplateContainerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+
+# Trivy server (if built-in server enabled)
+trivy:
+  image:
+    registry: ${trivy.registry}
+    repository: ${trivy.repository}
+    tag: ${trivy.tag}@${trivy.digest}
+
+  server:
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsGroup: 65532
+      runAsUser: 65532
+
+    securityContext:
+      privileged: false
+      readOnlyRootFilesystem: true
+
+# Node collector
+nodeCollector:
+  registry: ${node-collector.registry}
+  repository: ${node-collector.repository}
+  tag: ${node-collector.tag}@${node-collector.digest}

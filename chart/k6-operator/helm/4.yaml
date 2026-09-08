@@ -1,0 +1,83 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Grafana k6-operator Helm chart 4.x
+image: dhi.io/k6-operator-chart
+variant: helm
+tags:
+  - 4.6.0
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: cf0ae21f4e26b0dd0f99d763ae72e063b4384f2a
+  CHART_HELM_NAME: k6-operator-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  K6_OPERATOR_REFERENCE: dhi/k6-operator:1.6.0-debian13@sha256:250998792e0f04928a3f31d74fad0756b027507e82b3e225a6b60b498ccf526b
+  K6_REFERENCE: dhi/k6:1.8.1-debian13-compat@sha256:a8901f81591705c1a7ad3c1eb80e5b34e6527376912b7f1b0569234559eceff5
+  SEMVER_MAJOR_MINOR_VERSION: "4.6"
+  SEMVER_MAJOR_VERSION: "4"
+  SEMVER_VERSION: 4.6.0
+  VERSION: 4.6.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: k6-operator
+      work-dir: /src/go/github.com/grafana/k6-operator/charts/k6-operator
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/grafana/k6-operator.git#helm-k6-operator-4.6.0
+            checksum: cf0ae21f4e26b0dd0f99d763ae72e063b4384f2a
+            path: /src/go/github.com/grafana/k6-operator
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          with:
+            chart:
+              appRef: k6-operator
+              description: Docker Hardened Images Helm chart for Grafana k6 Kubernetes operator
+              images:
+                - name: k6-operator
+                  ref: dhi/k6-operator:1.6.0-debian13@sha256:250998792e0f04928a3f31d74fad0756b027507e82b3e225a6b60b498ccf526b
+                - name: k6
+                  ref: dhi/k6:1.8.1-debian13-compat@sha256:a8901f81591705c1a7ad3c1eb80e5b34e6527376912b7f1b0569234559eceff5
+              name: k6-operator-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/grafana/k6-operator
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          with:
+            chart: .
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: .
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/k6-operator/config

@@ -1,0 +1,69 @@
+image:
+  registry: ${thanos.registry}
+  repository: ${thanos.repository}
+  tag: ${thanos.tag}
+  digest: ${thanos.digest}
+
+volumePermissions:
+  image:
+    registry: ${bash.registry}
+    repository: ${bash.repository}
+    tag: ${bash.tag}
+    digest: ${bash.digest}
+
+query:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+queryFrontend:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+bucketweb:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+compactor:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+storeGateway:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+ruler:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+receiveDistributor:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+receive:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true

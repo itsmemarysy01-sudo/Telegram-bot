@@ -1,0 +1,1604 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/docker-hardened-images/definitions/blob/main/.spec.json",
+  "properties": {
+    "includes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "References to other spec files relative to repository root"
+    },
+    "track": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "github_release"
+                ]
+              },
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              },
+              "set": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "properties": {
+                        "match": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string",
+                          "enum": [
+                            "commit",
+                            "tag",
+                            "name"
+                          ]
+                        },
+                        "var": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "var",
+                        "value"
+                      ]
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "use": {
+                "type": "string",
+                "enum": [
+                  "release",
+                  "tag"
+                ]
+              },
+              "match": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "owner",
+              "repo",
+              "set"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "github_tag"
+                ]
+              },
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              },
+              "set": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "properties": {
+                        "match": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string",
+                          "enum": [
+                            "commit",
+                            "tag",
+                            "name"
+                          ]
+                        },
+                        "var": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "var",
+                        "value"
+                      ]
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "match": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "owner",
+              "repo",
+              "match",
+              "set"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "github_repository"
+                ]
+              },
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              },
+              "branch": {
+                "type": "string"
+              },
+              "set": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "type",
+              "owner",
+              "repo",
+              "set"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "alpine_package"
+                ]
+              },
+              "package": {
+                "type": "string",
+                "pattern": "^pkg:apk/.*$"
+              },
+              "set": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "package",
+              "set"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "debian_package"
+                ]
+              },
+              "package": {
+                "type": "string",
+                "pattern": "^pkg:deb/.*$"
+              },
+              "set": {
+                "type": "string"
+              },
+              "match": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "package",
+              "set"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "var_increment"
+                ]
+              },
+              "set": {
+                "type": "string",
+                "default": "REL"
+              },
+              "increment": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "reset": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "oci_artifact"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "match": {
+                "type": "string"
+              },
+              "set": {
+                "items": {
+                  "properties": {
+                    "match": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string",
+                      "enum": [
+                        "digest",
+                        "tag",
+                        "reference"
+                      ]
+                    },
+                    "var": {
+                      "type": "string"
+                    },
+                    "selection": {
+                      "type": "string",
+                      "enum": [
+                        "longest",
+                        "exact",
+                        "default"
+                      ],
+                      "description": "Tag selection behavior for reference values: 'longest' (default) resolves to the most specific equivalent tag, 'exact' uses the matched tag as-is.",
+                      "default": "longest"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "var",
+                    "value"
+                  ]
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "type",
+              "name",
+              "set",
+              "match"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "json_file"
+                ]
+              },
+              "url": {
+                "type": "string"
+              },
+              "set": {
+                "type": "object"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "url",
+              "set"
+            ]
+          },
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "increment"
+                ]
+              },
+              {
+                "required": [
+                  "reset"
+                ]
+              }
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "var_increment"
+                ]
+              },
+              "set": {
+                "type": "string",
+                "default": "REL"
+              },
+              "increment": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "reset": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "type",
+              "set"
+            ]
+          }
+        ],
+        "type": "object",
+        "description": "The configuration for tracking."
+      },
+      "type": "array",
+      "description": "Configuration for how depedencies should be tracked and updated."
+    },
+    "name": {
+      "type": "string",
+      "description": "The friendly name of the image definition."
+    },
+    "image": {
+      "type": "string",
+      "description": "The name of the image to build.",
+      "examples": [
+        "dhi/golang"
+      ]
+    },
+    "compression": {
+      "type": "string",
+      "enum": [
+        "zstd",
+        "gzip"
+      ],
+      "description": "The compression algorithm to use for the image.",
+      "default": "zstd"
+    },
+    "output": {
+      "type": "string",
+      "enum": [
+        "layered",
+        "squashed"
+      ],
+      "description": "The output format of the image. 'squashed' flattens the whole image into a single layer.",
+      "default": "layered"
+    },
+    "entitlement": {
+      "type": "string",
+      "enum": [
+        "public",
+        "enterprise",
+        "els"
+      ],
+      "description": "The entitlement required to access this image/package."
+    },
+    "variant": {
+      "type": "string",
+      "enum": [
+        "dev",
+        "runtime",
+        "helm"
+      ],
+      "description": "The variant of the image.",
+      "default": "runtime"
+    },
+    "flavor": {
+      "type": "string",
+      "description": "The flavor of the image."
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "The tags to apply to the image."
+    },
+    "suffix": {
+      "type": "string",
+      "description": "The suffix to apply to the image tags."
+    },
+    "platforms": {
+      "items": {
+        "type": "string",
+        "enum": [
+          "linux/amd64",
+          "linux/arm64"
+        ]
+      },
+      "type": "array",
+      "description": "The platforms to build the image for.",
+      "default": [
+        "linux/amd64",
+        "linux/arm64"
+      ]
+    },
+    "dates": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "end-of-life": {
+          "type": "string"
+        },
+        "end-of-support": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "The dates for the image."
+    },
+    "vars": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "Variables to use in the image configuration. They can be specified by ${VAR_NAME} and will be substituted at merge time"
+    },
+    "contents": {
+      "properties": {
+        "repositories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "keyring": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "packages": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "files": {
+          "items": {
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "if": {
+                "type": "string"
+              },
+              "checksum": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "includes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "excludes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "platforms": {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "linux/amd64",
+                    "linux/arm64"
+                  ]
+                },
+                "type": "array",
+                "default": [
+                  "linux/amd64",
+                  "linux/arm64"
+                ]
+              },
+              "spdx": {
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "packages": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "purl": {
+                          "type": "string"
+                        },
+                        "license": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object"
+              },
+              "uid": {
+                "type": "integer"
+              },
+              "gid": {
+                "type": "integer"
+              },
+              "mode": {
+                "type": "string"
+              },
+              "secret-id": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "builds": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "if": {
+                "type": "string"
+              },
+              "entitlement": {
+                "type": "string"
+              },
+              "uses": {
+                "type": "string"
+              },
+              "work-dir": {
+                "type": "string"
+              },
+              "shell": {
+                "type": "string"
+              },
+              "privileged": {
+                "type": "boolean"
+              },
+              "environment": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "caches": {
+                "items": {
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "sharing": {
+                      "type": "string",
+                      "enum": [
+                        "shared",
+                        "private",
+                        "locked"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "path"
+                  ]
+                },
+                "type": "array"
+              },
+              "matrix": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "contents": {
+                "properties": {
+                  "repositories": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "keyring": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "packages": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "files": {
+                    "items": {
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "if": {
+                          "type": "string"
+                        },
+                        "checksum": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "includes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "excludes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "platforms": {
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "linux/amd64",
+                              "linux/arm64"
+                            ]
+                          },
+                          "type": "array",
+                          "default": [
+                            "linux/amd64",
+                            "linux/arm64"
+                          ]
+                        },
+                        "spdx": {
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "string"
+                            },
+                            "packages": {
+                              "items": {
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "purl": {
+                                    "type": "string"
+                                  },
+                                  "license": {
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "type": "string"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "type": "object"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "additionalProperties": false,
+                          "type": "object"
+                        },
+                        "uid": {
+                          "type": "integer"
+                        },
+                        "gid": {
+                          "type": "integer"
+                        },
+                        "mode": {
+                          "type": "string"
+                        },
+                        "secret-id": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "mappings": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "artifacts": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "if": {
+                          "type": "string"
+                        },
+                        "includes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "excludes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "uid": {
+                          "type": "integer"
+                        },
+                        "gid": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object"
+              },
+              "pipeline": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "if": {
+                      "type": "string"
+                    },
+                    "uses": {
+                      "anyOf": [
+                        {
+                          "const": "go/hermetic@v1",
+                          "title": "Downlonds Go modules for hermetic and reproducible builds",
+                          "description": "Downloads Go modules for hermetic and reproducible builds."
+                        },
+                        {
+                          "const": "go/bump@v1",
+                          "title": "Go dependency bump",
+                          "description": "Bumps version of Go dependencies in go.mod and go.sum files."
+                        },
+                        {
+                          "const": "go/bump@v2",
+                          "title": "Go dependency bump",
+                          "description": "Bumps version of Go dependencies in go.mod and go.sum files."
+                        },
+                        {
+                          "const": "go/build@v1",
+                          "title": "Go build",
+                          "description": "Builds a Go application."
+                        },
+                        {
+                          "const": "git/checkout@v1",
+                          "title": "Git checkout",
+                          "description": "Checks out a specific branch or commit from a Git repository. Can also verify the checked out commit."
+                        },
+                        {
+                          "const": "git/patch@v1",
+                          "title": "Git patch",
+                          "description": "Applies a patch to a Git repository."
+                        },
+                        {
+                          "const": "cosign/verify-blob@v1",
+                          "title": "Cosign verify blob",
+                          "description": "Verifies a blob using Cosign."
+                        },
+                        {
+                          "const": "deb/build@v1",
+                          "title": "Debian package build",
+                          "description": "Builds a Debian package from a control file and source files."
+                        },
+                        {
+                          "const": "deb/install@v1",
+                          "title": "Debian package install",
+                          "description": "Installs a Debian package."
+                        },
+                        {
+                          "const": "gpg/verify@v1",
+                          "title": "GPG verify",
+                          "description": "Verifies a GPG signature of a file or a set of files."
+                        },
+                        {
+                          "const": "mvn/patch@v1",
+                          "title": "Maven patch",
+                          "description": "Applies a patch to a Maven project, updating the pom.xml file."
+                        },
+                        {
+                          "const": "mvn/mirror@v1",
+                          "title": "Maven mirror",
+                          "description": "Writes a Maven settings.xml that mirrors Maven Central through Cloudsmith."
+                        },
+                        {
+                          "const": "gradle/mirror@v1",
+                          "title": "Gradle mirror",
+                          "description": "Writes a Gradle init script that mirrors Maven Central and the Gradle Plugin Portal through Cloudsmith."
+                        },
+                        {
+                          "const": "strip@v1",
+                          "title": "Strip binaries",
+                          "description": "Strips debugging symbols and other unnecessary information from binaries to reduce their size."
+                        },
+                        {
+                          "const": "npm/patch@v1",
+                          "title": "NPM patch v1",
+                          "description": "Updates dependencies in an NPM project, updating the package.json file and bumping dependencies in node_modules/ directory."
+                        },
+                        {
+                          "const": "npm/bump@v1",
+                          "title": "NPM bump (NPM patch v2)",
+                          "description": "Updates dependencies in an NPM project with support for NPM overrides, updating the package.json and package-lock.json files."
+                        },
+                        {
+                          "const": "yarn/patch@v1",
+                          "title": "Yarn patch",
+                          "description": "Applies a patch to a Yarn project, updating the package.json and yarn.lock file."
+                        },
+                        {
+                          "const": "yarn/bump@v1",
+                          "title": "Yarn bump",
+                          "description": "Updates dependencies in a Yarn project using a hardcoded global override for all versions of a dependency."
+                        },
+                        {
+                          "const": "yarn/bump@v2",
+                          "title": "Yarn bump v2",
+                          "description": "Updates dependencies in a Yarn project with support for precise transitive dependency overrides."
+                        },
+                        {
+                          "const": "patch@v1",
+                          "title": "Patch",
+                          "description": "Applies a patch to a file or a set of files."
+                        },
+                        {
+                          "const": "sbom@v1",
+                          "title": "SBOM",
+                          "description": "Generates an SBOM for a source."
+                        },
+                        {
+                          "const": "spdx@v1",
+                          "title": "SPDX",
+                          "description": "Generates an SPDX document for a source."
+                        },
+                        {
+                          "const": "yq/patch@v1",
+                          "title": "yq patch",
+                          "description": "Applies a patch to a YAML file."
+                        },
+                        {
+                          "const": "helm/package@v1",
+                          "title": "Helm package",
+                          "description": "Packages a Helm chart."
+                        },
+                        {
+                          "const": "helm/rudder@v1",
+                          "title": "Helm rudder",
+                          "description": "Massages a Helm chart to make it suitable for packaging."
+                        },
+                        {
+                          "const": "helm/cmd@v1",
+                          "title": "Helm command",
+                          "description": "Runs a Helm command."
+                        },
+                        {
+                          "const": "helm/login@v1",
+                          "title": "Helm login",
+                          "description": "Logs in to a Helm registry."
+                        },
+                        {
+                          "const": "helm/logout@v1",
+                          "title": "Helm logout",
+                          "description": "Logs out of a Helm registry."
+                        },
+                        {
+                          "const": "helm/annotations@v1",
+                          "title": "Helm annotations",
+                          "description": "Applies annotations to a Helm chart."
+                        },
+                        {
+                          "const": "abuild/setup@v1",
+                          "title": "abuild setup",
+                          "description": "Sets up abuild."
+                        },
+                        {
+                          "const": "abuild/build@v1",
+                          "title": "abuild build",
+                          "description": "Builds an Alpine package."
+                        },
+                        {
+                          "const": "abuild/upload@v1",
+                          "title": "abuild upload",
+                          "description": "Uploads an Alpine package to the registry."
+                        },
+                        {
+                          "const": "abuild/apk@v1",
+                          "title": "abuild newapk",
+                          "description": "Builds a new Alpine package."
+                        },
+                        {
+                          "const": "abuild/disable@v1",
+                          "title": "abuild disable",
+                          "description": "Disables a function in an Alpine package."
+                        },
+                        {
+                          "const": "abuild/bump@v1",
+                          "title": "abuild bump",
+                          "description": "Bumps the version or release of an Alpine package."
+                        },
+                        {
+                          "const": "abuild/source@v1",
+                          "title": "abuild source",
+                          "description": "Adds a source to an Alpine package."
+                        },
+                        {
+                          "const": "dpkg/patch@v1",
+                          "title": "dpkg patch",
+                          "description": "Adds patches to a Debian series file."
+                        },
+                        {
+                          "const": "dpkg/build@v1",
+                          "title": "dpkg build",
+                          "description": "Builds a Debian package."
+                        },
+                        {
+                          "const": "dpkg/bump@v1",
+                          "title": "dpkg bump",
+                          "description": "Bumps the version of a Debian package."
+                        },
+                        {
+                          "const": "dpkg/upload@v1",
+                          "title": "dpkg upload",
+                          "description": "Uploads a Debian package to the registry."
+                        },
+                        {
+                          "const": "dpkg/extract@v1",
+                          "title": "dpkg extract",
+                          "description": "Extracts a Debian package."
+                        },
+                        {
+                          "const": "dpkg/source@v1",
+                          "title": "dpkg source",
+                          "description": "Extracts a Debian source package."
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "type": "string"
+                    },
+                    "run-as": {
+                      "type": "string"
+                    },
+                    "work-dir": {
+                      "type": "string"
+                    },
+                    "shell": {
+                      "type": "string"
+                    },
+                    "privileged": {
+                      "type": "boolean"
+                    },
+                    "environment": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "caches": {
+                      "items": {
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "sharing": {
+                            "type": "string",
+                            "enum": [
+                              "shared",
+                              "private",
+                              "locked"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "path"
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "secrets": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "if": {
+                            "type": "string"
+                          },
+                          "env": {
+                            "type": "string"
+                          },
+                          "optional": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "env"
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "with": {
+                      "type": "object"
+                    },
+                    "runs": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "paths": {
+                "items": {
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "symlink",
+                        "directory",
+                        "file",
+                        "delete",
+                        "emptyfile"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "if": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "uid": {
+                      "type": "integer"
+                    },
+                    "gid": {
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "recursive": {
+                      "type": "boolean"
+                    },
+                    "platforms": {
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "linux/amd64",
+                          "linux/arm64"
+                        ]
+                      },
+                      "type": "array",
+                      "default": [
+                        "linux/amd64",
+                        "linux/arm64"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "path"
+                  ]
+                },
+                "type": "array"
+              },
+              "accounts": {
+                "properties": {
+                  "root": {
+                    "type": "boolean"
+                  },
+                  "run-as": {
+                    "type": "string"
+                  },
+                  "users": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "uid": {
+                          "type": "integer"
+                        },
+                        "gid": {
+                          "type": "integer"
+                        },
+                        "mode": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "uid",
+                        "gid"
+                      ]
+                    },
+                    "type": "array"
+                  },
+                  "groups": {
+                    "items": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "gid": {
+                          "type": "integer"
+                        },
+                        "members": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "gid"
+                      ]
+                    },
+                    "type": "array"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object"
+              },
+              "outputs": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "if": {
+                      "type": "string"
+                    },
+                    "uid": {
+                      "type": "integer"
+                    },
+                    "gid": {
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "type": "string"
+                    },
+                    "diff": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "attestations": {
+                "items": {
+                  "properties": {
+                    "if": {
+                      "type": "string"
+                    },
+                    "predicate-type": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "diff": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "mappings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "artifacts": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "if": {
+                "type": "string"
+              },
+              "includes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "excludes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "uid": {
+                "type": "integer"
+              },
+              "gid": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "The contents of the image."
+    },
+    "accounts": {
+      "properties": {
+        "root": {
+          "type": "boolean"
+        },
+        "run-as": {
+          "type": "string"
+        },
+        "users": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "uid": {
+                "type": "integer"
+              },
+              "gid": {
+                "type": "integer"
+              },
+              "mode": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "uid",
+              "gid"
+            ]
+          },
+          "type": "array"
+        },
+        "groups": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "gid": {
+                "type": "integer"
+              },
+              "members": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "gid"
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "The account configuration for the image."
+    },
+    "os-release": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "id-like": {
+          "type": "string",
+          "pattern": "^[a-z0-9._-]+( [a-z0-9._-]+)*$"
+        },
+        "version-id": {
+          "type": "string"
+        },
+        "version-codename": {
+          "type": "string"
+        },
+        "pretty-name": {
+          "type": "string"
+        },
+        "home-url": {
+          "type": "string"
+        },
+        "bug-report-url": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "The OS information for the image."
+    },
+    "work-dir": {
+      "type": "string",
+      "description": "The working directory for the image."
+    },
+    "stop-signal": {
+      "type": "string",
+      "description": "The signal used to stop containers created from the image."
+    },
+    "environment": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "The environment variables for the image."
+    },
+    "paths": {
+      "items": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "symlink",
+              "directory",
+              "file",
+              "delete",
+              "emptyfile"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "if": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "integer"
+          },
+          "gid": {
+            "type": "integer"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "platforms": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "linux/amd64",
+                "linux/arm64"
+              ]
+            },
+            "type": "array",
+            "default": [
+              "linux/amd64",
+              "linux/arm64"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "path"
+        ]
+      },
+      "type": "array",
+      "description": "The paths to mutate in the image."
+    },
+    "annotations": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "The annotations to apply to the image."
+    },
+    "labels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "The labels to apply to the image."
+    },
+    "entrypoint": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "The entrypoint for the image."
+    },
+    "cmd": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "The command for the image."
+    },
+    "ports": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "The ports to expose in the image."
+    },
+    "tests": {
+      "items": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "directory": {
+            "type": "string"
+          },
+          "commands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "exit-code": {
+            "type": "integer"
+          },
+          "timeout": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "exit-code"
+        ]
+      },
+      "type": "array",
+      "description": "The tests to run on the image."
+    },
+    "fips-compliant": {
+      "type": "boolean",
+      "description": "Whether the image is FIPS compliant.",
+      "default": false
+    },
+    "stig-certified": {
+      "type": "boolean",
+      "description": "Whether the image is STIG certified.",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "title": "DHI image definition",
+  "description": "A specification for defining a Docker Hardened Image (DHI)"
+}

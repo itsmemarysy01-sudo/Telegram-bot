@@ -1,0 +1,45 @@
+server:
+  securityContext:
+    runAsUser: 65532
+    runAsNonRoot: true
+    runAsGroup: 65532
+    fsGroup: 65532
+  image:
+    repository: ${prometheus.registry}/${prometheus.repository}
+    tag: ${prometheus.tag}
+    digest: ${prometheus.digest}
+
+configmapReload:
+  prometheus:
+    image:
+      repository: ${prometheus-config-reloader.registry}/${prometheus-config-reloader.repository}
+      tag: ${prometheus-config-reloader.tag}
+      digest: ${prometheus-config-reloader.digest}
+    containerSecurityContext:
+      runAsUser: 65532
+      runAsNonRoot: true
+      runAsGroup: 65532
+
+alertmanager:
+  service:
+    port: 9093
+    type: ClusterIP
+  ingress:
+    enabled: false
+  podSecurityContext:
+    runAsUser: 65532
+    runAsNonRoot: true
+    runAsGroup: 65532
+    fsGroup: 65532
+
+prometheus-pushgateway:
+  service:
+    type: ClusterIP
+    port: 9091
+  ingress:
+    enabled: false
+  podSecurityContext:
+    runAsUser: 65532
+    runAsNonRoot: true
+    runAsGroup: 65532
+    fsGroup: 65532

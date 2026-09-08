@@ -1,0 +1,10 @@
+nameOverride: cloudnative-pg #Needed for labeling the deployment so that it can be found
+image:
+  repository: ${cloudnative-pg.registry}/${cloudnative-pg.repository}
+  tag: ${cloudnative-pg.tag}@${cloudnative-pg.digest}
+containerSecurityContext:
+  runAsUser: 65532
+  runAsGroup: 65532
+  runAsNonRoot: true
+podSecurityContext:
+  fsGroup: 65532

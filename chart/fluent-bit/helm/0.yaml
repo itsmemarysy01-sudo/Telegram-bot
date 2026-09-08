@@ -1,0 +1,89 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Fluent Bit Helm chart 0.x
+image: dhi.io/fluent-bit-chart
+variant: helm
+tags:
+  - 0.58.1
+platforms:
+  - linux/amd64
+vars:
+  BUSYBOX_REFERENCE: dhi/busybox:1.37.0-alpine3.22@sha256:d134f6e16dc460d98be2331fc3faa842fc401a5ca35a8ac2c59459e69aa19700
+  CHART_COMMIT_SHA: 22a564dc85600c67d97e01a5b4cdf3b829292529
+  CHART_HELM_NAME: fluent-bit-chart
+  CONFIGMAP_RELOAD_REFERENCE: dhi/configmap-reload:0.15.0-debian13@sha256:e289d7704b39df247e253494c5032f58529c30d1ea3e979854495121520d60e0
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  FLUENT_BIT_REFERENCE: dhi/fluent-bit:4.2.6-debian13@sha256:1c6ce8eced0badae09f70e233f1ae75d2a31ac80df9a2b00aa89c42fb54dce48
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "0.58"
+  SEMVER_MAJOR_VERSION: "0"
+  SEMVER_VERSION: 0.58.1
+  VERSION: 0.58.1
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: fluent-bit
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/fluent/helm-charts.git#fluent-bit-0.58.1
+            checksum: 22a564dc85600c67d97e01a5b4cdf3b829292529
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/fluent-bit
+          with:
+            chart:
+              appRef: fluent-bit
+              description: Docker Hardened Images Helm chart for Fluent Bit
+              images:
+                - name: fluent-bit
+                  ref: dhi/fluent-bit:4.2.6-debian13@sha256:1c6ce8eced0badae09f70e233f1ae75d2a31ac80df9a2b00aa89c42fb54dce48
+                - name: configmap-reload
+                  ref: dhi/configmap-reload:0.15.0-debian13@sha256:e289d7704b39df247e253494c5032f58529c30d1ea3e979854495121520d60e0
+                - name: busybox
+                  ref: dhi/busybox:1.37.0-alpine3.22@sha256:d134f6e16dc460d98be2331fc3faa842fc401a5ca35a8ac2c59459e69aa19700
+              name: fluent-bit-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/fluent/fluent-bit
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/fluent-bit
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: fluent-bit
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: fluent-bit
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/fluent-bit/config

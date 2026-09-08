@@ -1,0 +1,220 @@
+# syntax=dhi.io/build:2-debian13
+
+name: Harbor DB 2.15.x (dev)
+image: dhi.io/harbor-db
+variant: dev
+tags:
+  - 2-dev
+  - 2.15-dev
+  - 2.15.2-dev
+  - 2-debian-dev
+  - 2-debian13-dev
+  - 2.15-debian-dev
+  - 2.15-debian13-dev
+  - 2.15.2-debian-dev
+  - 2.15.2-debian13-dev
+platforms:
+  - linux/amd64
+  - linux/arm64
+dates:
+  release: "2026-03-20"
+vars:
+  GOSU_VERSION: 1.19-9
+  PACKAGE_NAME: harbor-db-2.15
+  POSTGRES_14_REFERENCE: dhi/postgres:14.24-debian13@sha256:32fad0ddbb362e93228186a7ba5bebb44d9774ef6eb48cec881ec76223623853
+  POSTGRES_14_VERSION: "14.24"
+  POSTGRES_15_REFERENCE: dhi/postgres:15.19-debian13@sha256:124cea30dc938f831afc5e3bcbc66968b78d2f26dbfa5503115892fdf7332b49
+  POSTGRES_15_VERSION: "15.19"
+  SEMVER_MAJOR_MINOR_VERSION: "2.15"
+  SEMVER_MAJOR_VERSION: "2"
+  SEMVER_VERSION: 2.15.2
+  VERSION: 2.15.2-1
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  packages:
+    - '!gawk'
+    - '!libelogind0'
+    - '!mawk'
+    - '!original-awk'
+    - apt
+    - base-files
+    - bash
+    - ca-certificates
+    - coreutils
+    - diffutils
+    - dpkg
+    - findutils
+    - gosu=1.19-9
+    - grep
+    - gzip
+    - harbor-db-2.15=2.15.2-1
+    - libc-bin
+    - libgssapi-krb5-2
+    - libicu76
+    - libldap2
+    - liblz4-1
+    - libpam0g
+    - libreadline8t64
+    - libselinux1
+    - libssl3t64
+    - libxml2
+    - libzstd1
+    - mawk
+    - perl-base
+    - sed
+    - tzdata
+    - util-linux
+    - zlib1g
+  builds:
+    - name: dhi-postgres-purl
+      contents:
+        packages:
+          - bash
+          - coreutils
+      pipeline:
+        - name: spdx postgres 14
+          uses: spdx@v1
+          with:
+            license: PostgreSQL
+            name: postgresql-14
+            purl: pkg:dhi/postgresql@14.24
+            version: 14.24
+        - name: spdx postgres 15
+          uses: spdx@v1
+          with:
+            license: PostgreSQL
+            name: postgresql-15
+            purl: pkg:dhi/postgresql@15.19
+            version: 15.19
+      outputs:
+        - source: /opt/docker/sbom/postgresql-14
+          target: /opt/docker/sbom/postgresql-14
+          uid: 0
+          gid: 0
+        - source: /opt/docker/sbom/postgresql-15
+          target: /opt/docker/sbom/postgresql-15
+          uid: 0
+          gid: 0
+    - name: locale
+      contents:
+        packages:
+          - bash
+          - locales
+          - coreutils
+          - gzip
+      pipeline:
+        - name: install locales
+          runs: |
+            set -eux -o pipefail
+
+            ln -s /etc/locale.alias /usr/share/locale/locale.alias
+
+            echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+            locale-gen en_US.UTF-8
+      outputs:
+        - source: /usr/share/locale
+          target: /usr/share/locale
+          uid: 0
+          gid: 0
+        - source: /usr/lib/locale
+          target: /usr/lib/locale
+          uid: 0
+          gid: 0
+  artifacts:
+    - name: dhi.io/postgres:14.24-debian13@sha256:32fad0ddbb362e93228186a7ba5bebb44d9774ef6eb48cec881ec76223623853
+      includes:
+        - opt/postgresql/14/**
+      uid: 0
+      gid: 0
+    - name: dhi.io/postgres:15.19-debian13@sha256:124cea30dc938f831afc5e3bcbc66968b78d2f26dbfa5503115892fdf7332b49
+      includes:
+        - opt/postgresql/15/**
+      uid: 0
+      gid: 0
+accounts:
+  root: true
+  run-as: root
+  users:
+    - name: postgres
+      uid: 70
+      gid: 70
+    - name: _apt
+      uid: 42
+      gid: 65532
+  groups:
+    - name: postgres
+      gid: 70
+      members:
+        - postgres
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/
+environment:
+  DEBIAN_FRONTEND: noninteractive
+  LANG: en_US.UTF-8
+  LANGUAGE: en_US:en
+  LC_ALL: en_US.UTF-8
+  PATH: /opt/postgresql/15/bin:/opt/postgresql/14/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  PGDATA: /var/lib/postgresql/data
+paths:
+  - type: symlink
+    path: /docker-entrypoint.sh
+    uid: 0
+    gid: 0
+    source: /usr/share/harbor-db/docker-entrypoint.sh
+  - type: symlink
+    path: /docker-healthcheck.sh
+    uid: 0
+    gid: 0
+    source: /usr/share/harbor-db/docker-healthcheck.sh
+  - type: symlink
+    path: /initdb.sh
+    uid: 0
+    gid: 0
+    source: /usr/share/harbor-db/initdb.sh
+  - type: symlink
+    path: /upgrade.sh
+    uid: 0
+    gid: 0
+    source: /usr/share/harbor-db/upgrade.sh
+  - type: symlink
+    path: /docker-entrypoint-initdb.d
+    uid: 0
+    gid: 0
+    source: /usr/share/harbor-db/docker-entrypoint-initdb.d
+  - type: directory
+    path: /var/lib/postgresql/data
+    uid: 70
+    gid: 70
+    mode: "0700"
+  - type: directory
+    path: /run/postgresql
+    uid: 70
+    gid: 70
+    mode: "0755"
+  - type: directory
+    path: /usr/local/sbin
+    uid: 0
+    gid: 0
+  - type: symlink
+    path: /usr/local/sbin/gosu
+    uid: 0
+    gid: 0
+    source: /usr/bin/gosu
+annotations:
+  org.opencontainers.image.description: A minimal Harbor DB image
+  org.opencontainers.image.licenses: Apache-2.0
+entrypoint:
+  - /docker-entrypoint.sh
+  - "14"
+  - "15"
+ports:
+  - 5432/tcp

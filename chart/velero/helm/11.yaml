@@ -1,0 +1,91 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Velero Helm chart 11.x
+image: dhi.io/velero-chart
+variant: helm
+tags:
+  - 11.4.0
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: d3c3d645a0249d26ad1d7b41b3a53634fd377940
+  CHART_HELM_NAME: velero-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  KUBECTL_REFERENCE: dhi/kubectl:1.35.8-debian13-compat@sha256:ab8616a1a8fa5c4cbf9d329de4ba3df1e04e4d90125e7c501fae97373b2e1b1f
+  SEMVER_MAJOR_MINOR_VERSION: "11.4"
+  SEMVER_MAJOR_VERSION: "11"
+  SEMVER_VERSION: 11.4.0
+  VELERO_REFERENCE: dhi/velero:1.18.2-debian13@sha256:98b10ba6f87bbde95bc7f6d3459f13b4fa18609948241f6171fce316d4dc024e
+  VERSION: 11.4.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: velero
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/vmware-tanzu/helm-charts.git#velero-11.4.0
+            checksum: d3c3d645a0249d26ad1d7b41b3a53634fd377940
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/velero
+          with:
+            chart:
+              appRef: velero
+              description: Docker Hardened Images Helm chart for Velero
+              images:
+                - name: velero
+                  ref: dhi/velero:1.18.2-debian13@sha256:98b10ba6f87bbde95bc7f6d3459f13b4fa18609948241f6171fce316d4dc024e
+                - name: kubectl
+                  ref: dhi/kubectl:1.35.8-debian13-compat@sha256:ab8616a1a8fa5c4cbf9d329de4ba3df1e04e4d90125e7c501fae97373b2e1b1f
+              name: velero-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/vmware-tanzu/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/velero
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            process-templates: true
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          with:
+            chart: ${source.dir}/helm-charts/charts/velero
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: velero
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: ${source.dir}/helm-charts/charts/velero
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/velero/config

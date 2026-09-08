@@ -1,0 +1,387 @@
+# syntax=dhi.io/build:2-debian13
+
+image: dhi.io/pkg-datahub-upgrade
+variant: runtime
+tags:
+  - 1.7.0.1
+  - 1.7.0.1-r0
+  - 1.7.0.1-debian13
+  - 1.7.0.1-r0-debian13
+platforms:
+  - linux/amd64
+  - linux/arm64
+dates:
+  release: "2025-03-17"
+vars:
+  COMMIT_SHA: e99431ec510d7a2001f815c6bf70913c493af76e
+  GRADLE_VERSION: 8.14.5-1
+  JDK_MAJOR_VERSION: "21"
+  JDK_VERSION: 21.0.12.8-0
+  JMX_PROMETHEUS_SHA256: 7d61f737fd661610ccc14aea79764faa1ea94a340cbc8f0029b3d2edea3d80c1
+  JMX_PROMETHEUS_VERSION: 1.0.1
+  OTEL_JAVAAGENT_SHA256: 130606aed07f101458fe42b8f453ef3a2536f6bce8a7ae64f222f5688ada2500
+  OTEL_JAVAAGENT_VERSION: 2.28.0
+  PACKAGE_HOME: /usr/lib/datahub-upgrade
+  PACKAGE_NAME: datahub-upgrade
+  REL: "0"
+  SEMVER_MAJOR_MINOR_VERSION: "1.7"
+  SEMVER_MAJOR_VERSION: "1"
+  SEMVER_VERSION: 1.7.0
+  VERSION: 1.7.0.1
+contents:
+  packages:
+    - base-files
+  builds:
+    - name: datahub-upgrade
+      work-dir: ${source.dir}/datahub
+      environment:
+        GRADLE_OPTS: -Dorg.gradle.daemon=false
+        JAVA_HOME: /usr/lib/jvm/temurin-21
+      caches:
+        - path: /root/.gradle/caches
+        - path: /root/.gradle/wrapper
+      contents:
+        repositories:
+          - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+        keyring:
+          - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+        packages:
+          - bash
+          - ca-certificates
+          - ca-certificates-bundle
+          - coreutils
+          - curl
+          - findutils
+          - git
+          - grep
+          - mawk
+          - python3
+          - sed
+          - tar
+          - eclipse-temurin-21-jdk=21.0.12.8-0
+          - gradle-8=8.14.5-1
+        files:
+          - url: git+https://github.com/datahub-project/datahub.git#v1.7.0.1
+            checksum: e99431ec510d7a2001f815c6bf70913c493af76e
+            path: ${source.dir}/datahub
+            spdx:
+              name: datahub
+              version: 1.7.0.1
+              packages:
+                - name: datahub
+                  purl: pkg:dhi/datahub-upgrade@1.7.0.1
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.21.6/jackson-core-2.21.6.jar
+            checksum: sha256:36111c3a4372cd5c2be6f4ec44a050382487920f3fc38ca3015c9c1678bd7c56
+            path: ${source.dir}/patch/deps/jackson-core-2.21.6.jar
+            spdx:
+              name: jackson-core
+              version: 2.21.6
+              packages:
+                - name: jackson-core
+                  purl: pkg:maven/com.fasterxml.jackson.core/jackson-core@2.21.6
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.21.6/jackson-databind-2.21.6.jar
+            checksum: sha256:62134a98de12d0a421cd2f5b9854c8e63f10f524b0341e66cfd31a4326f6a329
+            path: ${source.dir}/patch/deps/jackson-databind-2.21.6.jar
+            spdx:
+              name: jackson-databind
+              version: 2.21.6
+              packages:
+                - name: jackson-databind
+                  purl: pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.21.6
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://repo1.maven.org/maven2/tools/jackson/core/jackson-core/3.1.6/jackson-core-3.1.6.jar
+            checksum: sha256:d4938937b819b48f273a25929dc4fbc72ac03b0753c9c6398f54c3905caf7d0e
+            path: ${source.dir}/patch/deps/tools-jackson-core-3.1.6.jar
+            spdx:
+              name: jackson-core
+              version: 3.1.6
+              packages:
+                - name: jackson-core
+                  purl: pkg:maven/tools.jackson.core/jackson-core@3.1.6
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://repo1.maven.org/maven2/tools/jackson/core/jackson-databind/3.1.6/jackson-databind-3.1.6.jar
+            checksum: sha256:f0ff64eaa9f1c4bca9d720cd70c542297b0b19fc8ad08531bc55e36c8eab8e4b
+            path: ${source.dir}/patch/deps/tools-jackson-databind-3.1.6.jar
+            spdx:
+              name: jackson-databind
+              version: 3.1.6
+              packages:
+                - name: jackson-databind
+                  purl: pkg:maven/tools.jackson.core/jackson-databind@3.1.6
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/1.0.1/jmx_prometheus_javaagent-1.0.1.jar
+            checksum: sha256:7d61f737fd661610ccc14aea79764faa1ea94a340cbc8f0029b3d2edea3d80c1
+            path: ${source.dir}/agents/jmx_prometheus_javaagent.jar
+            spdx:
+              name: jmx_prometheus_javaagent
+              version: 1.0.1
+              packages:
+                - name: jmx_prometheus_javaagent
+                  purl: pkg:maven/io.prometheus.jmx/jmx_prometheus_javaagent@1.0.1
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+          - url: https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.28.0/opentelemetry-javaagent.jar
+            checksum: sha256:130606aed07f101458fe42b8f453ef3a2536f6bce8a7ae64f222f5688ada2500
+            path: ${source.dir}/agents/opentelemetry-javaagent.jar
+            spdx:
+              name: opentelemetry-javaagent
+              version: 2.28.0
+              packages:
+                - name: opentelemetry-javaagent
+                  purl: pkg:maven/io.opentelemetry.javaagent/opentelemetry-javaagent@2.28.0
+                  license: Apache-2.0
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: install gradle init scripts
+          runs: |
+            set -eux -o pipefail
+
+            install -D -m 0644 \
+              ${source.dir}/patch/1.overrides.gradle \
+              /root/.gradle/init.d/dhi-overrides.gradle
+        - name: patch maven central for build cloud rate limits
+          runs: |
+            set -eux -o pipefail
+
+            MIRROR='maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }'
+            PORTAL=$'maven {\\n    url "https://plugins.gradle.org/m2/"\\n    metadataSources { mavenPom(); artifact(); ignoreGradleMetadataRedirection() }\\n}'
+            find . \( -name "*.gradle" -o -name "*.gradle.kts" \) -print0 \
+              | xargs -0 sed -i \
+                -e "s|mavenCentral()|${MIRROR}|g" \
+                -e "s|gradlePluginPortal()|${PORTAL}|g"
+
+            sed -i \
+              -e 's|datahub.dependencies.maven.central=https://repo1.maven.org/maven2|datahub.dependencies.maven.central=https://maven-central.storage-download.googleapis.com/maven2|g' \
+              -e 's|apacheMavenRepositoryUrl=https://repo1.maven.org/maven2|apacheMavenRepositoryUrl=https://maven-central.storage-download.googleapis.com/maven2|g' \
+              gradle.properties
+        - name: bump vulnerable dependency versions
+          runs: |
+            set -eux -o pipefail
+
+            find . \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'gradle.lockfile' \) -print0 \
+              | xargs -0 sed -i \
+                -e 's|at\.yawk\.lz4:lz4-java:1\.10\.1|at.yawk.lz4:lz4-java:1.11.1|g'
+
+            cat >> build.gradle << 'GRADLE'
+
+            allprojects {
+                configurations.configureEach {
+                    resolutionStrategy {
+                        force 'at.yawk.lz4:lz4-java:1.11.1'
+                        eachDependency { details ->
+                        def req = details.requested
+                        if (req.group == 'io.netty'
+                                && req.name.startsWith('netty-')
+                                && !req.name.startsWith('netty-tcnative')) {
+                            details.useVersion '4.2.17.Final'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'com.squareup.wire'
+                                && req.name == 'wire-runtime-jvm') {
+                            details.useVersion '6.3.0'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group != null && req.group.startsWith('com.fasterxml.jackson')
+                                && req.name == 'jackson-databind') {
+                            details.useVersion '2.21.6'
+                            details.because 'DHI CVE remediation: CVE-2026-68497'
+                        }
+                        if (req.group != null && req.group.startsWith('com.fasterxml.jackson')
+                                && req.name != 'jackson-annotations'
+                                && req.name != 'jackson-databind') {
+                            details.useVersion '2.21.6'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group != null && req.group.startsWith('tools.jackson')) {
+                            details.useVersion '3.1.6'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.apache.logging.log4j'
+                                && req.name.startsWith('log4j-')) {
+                            details.useVersion '2.25.5'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'ch.qos.logback'
+                                && req.name.startsWith('logback-')) {
+                            details.useVersion '1.5.35'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.postgresql'
+                                && req.name == 'postgresql') {
+                            details.useVersion '42.7.12'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.mariadb.jdbc'
+                                && req.name == 'mariadb-java-client') {
+                            details.useVersion '2.7.14'
+                            details.because 'DHI CVE remediation: CVE-2026-55856, CVE-2026-55857, CVE-2026-55858'
+                        }
+                        if (req.group == 'org.springframework'
+                                && req.version == '7.0.7') {
+                            details.useVersion '7.0.8'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.springframework.boot'
+                                && req.name.startsWith('spring-boot')) {
+                            details.useVersion '4.0.7'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'io.micrometer'
+                                && (req.name == 'micrometer-core'
+                                    || req.name.startsWith('micrometer-registry-'))) {
+                            details.useVersion '1.16.6'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.apache.httpcomponents.core5'
+                                && req.name.startsWith('httpcore5')) {
+                            details.useVersion '5.4.3'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.apache.httpcomponents.client5'
+                                && req.name == 'httpclient5') {
+                            details.useVersion '5.6.3'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if ((req.group == 'org.lz4' || req.group == 'at.yawk.lz4')
+                                && req.name == 'lz4-java') {
+                            details.useTarget 'at.yawk.lz4:lz4-java:1.11.1'
+                            details.because 'DHI CVE remediation'
+                        }
+                        if (req.group == 'org.apache.parquet'
+                                && req.name == 'parquet-jackson'
+                                && req.version == '1.17.1') {
+                            details.useVersion '1.18.0'
+                            details.because 'DHI CVE remediation: parquet-jackson 1.17.1 embeds jackson 2.21.3'
+                        }
+                        }
+                    }
+                }
+            }
+            GRADLE
+        - name: build
+          privileged: true
+          runs: |
+            set -eux -o pipefail
+
+            export GRADLE_HOME="/usr/share/java/gradle"
+            export JAVA_HOME="/usr/lib/jvm/temurin-21"
+            export PATH="${GRADLE_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
+
+            find /root/.gradle/caches -name '*.lock' -delete 2> /dev/null || true
+            find /root/.gradle/caches/journal-* -mindepth 1 -maxdepth 1 \
+              -name '*.lock' -delete 2> /dev/null || true
+
+            find . -name 'gradle.lockfile' -delete || true
+
+            ./gradlew --init-script ${source.dir}/files/init.gradle \
+              :datahub-upgrade:assemble -x test \
+              --no-daemon --no-watch-fs --parallel --max-workers=4 \
+              --update-locks 'com.fasterxml.jackson.core:*,com.fasterxml.jackson.dataformat:*,com.fasterxml.jackson.datatype:*,com.fasterxml.jackson.module:*,tools.jackson.core:*,tools.jackson.dataformat:*,tools.jackson.module:*,org.apache.commons:*,io.opentelemetry:*,io.netty:*,org.apache.parquet:*,org.postgresql:*,org.mariadb.jdbc:*,org.springframework.boot:*,org.springframework.kafka:*,org.springframework:*,org.jline:*,ch.qos.logback:*,at.yawk.lz4:*,org.apache.logging.log4j:*,io.micrometer:*,org.apache.httpcomponents.core5:*,org.apache.httpcomponents.client5:*,com.squareup.wire:*' \
+              --console=plain
+
+            test -f datahub-upgrade/build/libs/datahub-upgrade.jar
+        - name: stage runtime files
+          runs: |
+            set -eux -o pipefail
+
+            mkdir -p "${target.dir}/usr/lib/datahub-upgrade/bin"
+            mkdir -p "${target.dir}/usr/lib/datahub-upgrade/scripts"
+            mkdir -p "${target.dir}/usr/lib/datahub-upgrade/lib"
+            mkdir -p "${target.dir}/usr/share/datahub-gms/resources"
+            mkdir -p "${target.dir}/usr/share/datahub-gms/scripts"
+            mkdir -p "${target.dir}/usr/lib/datahub"
+
+            cp datahub-upgrade/build/libs/datahub-upgrade.jar \
+              "${target.dir}/usr/lib/datahub-upgrade/bin/datahub-upgrade.jar"
+
+            bash "${source.dir}/patch/patch-hazelcast-jackson.sh" \
+              "${target.dir}/usr/lib/datahub-upgrade/bin/datahub-upgrade.jar" \
+              "${source.dir}/patch/deps"
+
+            cp "${source.dir}/agents/opentelemetry-javaagent.jar" \
+              "${target.dir}/usr/lib/datahub-upgrade/lib/opentelemetry-javaagent.jar"
+            cp "${source.dir}/agents/jmx_prometheus_javaagent.jar" \
+              "${target.dir}/usr/lib/datahub-upgrade/lib/jmx_prometheus_javaagent.jar"
+
+            cp metadata-models/src/main/resources/entity-registry.yml \
+              "${target.dir}/usr/share/datahub-gms/resources/entity-registry.yml"
+            cp docker/monitoring/client-prometheus-config.yaml \
+              "${target.dir}/usr/share/datahub-gms/scripts/prometheus-config.yaml"
+
+            cp "${source.dir}/files/start.sh" \
+              "${target.dir}/usr/lib/datahub-upgrade/scripts/start.sh"
+            chmod 0755 "${target.dir}/usr/lib/datahub-upgrade/scripts/start.sh"
+
+            cp docker/snippets/wait_for_deps.sh \
+              "${target.dir}/usr/lib/datahub/wait_for_deps.sh"
+            chmod 0644 "${target.dir}/usr/lib/datahub/wait_for_deps.sh"
+        - name: java sbom
+          uses: sbom@v1
+          with:
+            extra-scanners: java-archive-cataloger
+            prefix: datahub-upgrade
+            source: ${target.dir}/usr/lib/datahub-upgrade
+        - uses: dhi/build-pkg:0
+          with:
+            depends:
+              - bash
+              - coreutils
+              - curl
+              - grep
+            description: DataHub schema and metadata upgrade job
+            files:
+              - usr/lib/datahub-upgrade
+              - usr/share/datahub-gms/resources
+              - usr/share/datahub-gms/scripts/prometheus-config.yaml
+              - usr/lib/datahub
+            formats:
+              - deb
+            license: Apache-2.0
+            name: datahub-upgrade
+            rel: 0
+            url: https://datahubproject.io/
+            version: 1.7.0.1
+      paths:
+        - type: file
+          path: ${source.dir}/files/start.sh
+          uid: 0
+          gid: 0
+          source: package/main/datahub-upgrade/files/start.sh
+        - type: file
+          path: ${source.dir}/files/init.gradle
+          uid: 0
+          gid: 0
+          source: package/main/datahub-upgrade/files/init.gradle
+        - type: file
+          path: ${source.dir}/patch/1.overrides.gradle
+          uid: 0
+          gid: 0
+          source: package/main/datahub-upgrade/patch/1.overrides.gradle
+        - type: file
+          path: ${source.dir}/patch/patch-hazelcast-jackson.sh
+          uid: 0
+          gid: 0
+          mode: "0755"
+          source: package/main/datahub-upgrade/patch/patch-hazelcast-jackson.sh
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/

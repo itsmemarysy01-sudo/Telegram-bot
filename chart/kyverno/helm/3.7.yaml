@@ -1,0 +1,140 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Kyverno Helm chart 3.7.x
+image: dhi.io/kyverno-chart
+variant: helm
+tags:
+  - 3.7.2
+platforms:
+  - linux/amd64
+vars:
+  APPVERSION: 1.17.2
+  CHART_COMMIT_SHA: eafa8fe9fe933a6314feaa9dcb49b700a9bc74a5
+  CHART_HELM_NAME: kyverno-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  KUBECTL_REFERENCE: dhi/kubectl:1.35.8-debian13@sha256:61215a2aa1a29c66e16a81ce45bf9051979470b3e57b21e8c64e5d031027cfd0
+  KYVERNO_BACKGROUND_CONTROLLER_REFERENCE: dhi/kyverno-background-controller:1.17.2-debian13@sha256:3c66337aceb347fa1970a862b7cd92743fa2f21802e57c03a01b02b2caf257a9
+  KYVERNO_CLEANUP_CONTROLLER_REFERENCE: dhi/kyverno-cleanup-controller:1.17.2-debian13@sha256:c0c8cbfda5c9acd2e152adad926a11bd78e493d8eb321cf7da8d2b408ee98dfd
+  KYVERNO_CLI_REFERENCE: dhi/kyverno-cli:1.17.2-debian13@sha256:9574210e4b20966099bd1a6d5191924e390de5a677a9237c332498eef211e356
+  KYVERNO_INIT_REFERENCE: dhi/kyverno-init:1.17.2-debian13@sha256:e2b62e1729767f43a7d096cf6450165e972ded97c8564aaf0a38e0d532ad1367
+  KYVERNO_READINESS_CHECKER_REFERENCE: dhi/kyverno-readiness-checker:1.17.2-debian13@sha256:d978a2a1431b28bfac47156960a32e68d832083bc51b02a226f561fa78d5148b
+  KYVERNO_REFERENCE: dhi/kyverno:1.17.2-debian13@sha256:8820aeb34d2756202398a60e80ee3bea36e3da3b8fadb4ab588f1aa6c3a62724
+  KYVERNO_REPORTS_CONTROLLER_REFERENCE: dhi/kyverno-reports-controller:1.17.2-debian13@sha256:67cb2abcf5cecf3a39c8cdc658babdb6b5be8263dc095e1fa220ac189606d9b0
+  KYVERNO_REPORTS_SERVER_CHART_REFERENCE: dhi/kyverno-reports-server-chart:0.1.7@sha256:dcdd47e59f6897791955e114d6cade760d9ee1bd750759c9fac7e4c3d7b91570
+  SEMVER_MAJOR_MINOR_VERSION: "3.7"
+  SEMVER_MAJOR_VERSION: "3"
+  SEMVER_VERSION: 3.7.2
+  VERSION: 3.7.2
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: kyverno-chart
+      work-dir: ${source.dir}/helm-charts/charts/kyverno
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/kyverno/kyverno.git#kyverno-chart-3.7.2
+            checksum: eafa8fe9fe933a6314feaa9dcb49b700a9bc74a5
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          with:
+            chart:
+              appRef: kyverno
+              dependencies:
+                - condition: crds.install
+                  keep: true
+                  name: crds
+                - condition: grafana.enabled
+                  keep: true
+                  name: grafana
+                - condition: crds.install
+                  keep: true
+                  name: kyverno-api
+                - condition: openreports.installCrds
+                  keep: true
+                  name: openreports
+                - alias: reports-server
+                  condition: reportsServer.enabled
+                  name: kyverno-reports-server
+                  ref: dhi/kyverno-reports-server-chart:0.1.7@sha256:dcdd47e59f6897791955e114d6cade760d9ee1bd750759c9fac7e4c3d7b91570
+              description: Docker Hardened Images Helm chart for Kyverno
+              images:
+                - name: kyverno
+                  ref: dhi/kyverno:1.17.2-debian13@sha256:8820aeb34d2756202398a60e80ee3bea36e3da3b8fadb4ab588f1aa6c3a62724
+                - name: kyverno-cli
+                  ref: dhi/kyverno-cli:1.17.2-debian13@sha256:9574210e4b20966099bd1a6d5191924e390de5a677a9237c332498eef211e356
+                - name: kyverno-readiness-checker
+                  ref: dhi/kyverno-readiness-checker:1.17.2-debian13@sha256:d978a2a1431b28bfac47156960a32e68d832083bc51b02a226f561fa78d5148b
+                - name: kubectl
+                  ref: dhi/kubectl:1.35.8-debian13@sha256:61215a2aa1a29c66e16a81ce45bf9051979470b3e57b21e8c64e5d031027cfd0
+                - name: kyverno-init
+                  ref: dhi/kyverno-init:1.17.2-debian13@sha256:e2b62e1729767f43a7d096cf6450165e972ded97c8564aaf0a38e0d532ad1367
+                - name: kyverno-background-controller
+                  ref: dhi/kyverno-background-controller:1.17.2-debian13@sha256:3c66337aceb347fa1970a862b7cd92743fa2f21802e57c03a01b02b2caf257a9
+                - name: kyverno-cleanup-controller
+                  ref: dhi/kyverno-cleanup-controller:1.17.2-debian13@sha256:c0c8cbfda5c9acd2e152adad926a11bd78e493d8eb321cf7da8d2b408ee98dfd
+                - name: kyverno-reports-controller
+                  ref: dhi/kyverno-reports-controller:1.17.2-debian13@sha256:67cb2abcf5cecf3a39c8cdc658babdb6b5be8263dc095e1fa220ac189606d9b0
+              name: kyverno-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/kyverno/kyverno
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: patch version specific values
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              apply:
+                - "on": values.yaml
+                  patch: ${source.dir}/config/values-3.7.yaml
+            registry: dhi.io
+        - name: helm login
+          uses: helm/login@v1
+          with:
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          privileged: true
+          with:
+            chart: kyverno
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          with:
+            chart: .
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: .
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/kyverno/config

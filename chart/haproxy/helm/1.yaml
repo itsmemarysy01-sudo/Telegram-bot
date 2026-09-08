@@ -1,0 +1,87 @@
+# syntax=dhi.io/build:2-helm3
+
+name: HAProxy Helm chart 1.x
+image: dhi.io/haproxy-chart
+variant: helm
+tags:
+  - 1.30.1
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: 81bbe34ac682243157aba3906b0a45fa0865d66e
+  CHART_HELM_NAME: haproxy-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HAPROXY_REFERENCE: dhi/haproxy:3.4.4-debian13@sha256:07ff8af7d6653388ebbb22a503144e393504f99fdc54c19dcbdd379b2215946a
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "1.30"
+  SEMVER_MAJOR_VERSION: "1"
+  SEMVER_VERSION: 1.30.1
+  VERSION: 1.30.1
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: haproxy
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/haproxytech/helm-charts.git#haproxy-1.30.1
+            checksum: 81bbe34ac682243157aba3906b0a45fa0865d66e
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/haproxy
+          with:
+            chart:
+              appRef: haproxy
+              description: Docker Hardened Images Helm chart for HAProxy
+              images:
+                - name: haproxy
+                  ref: dhi/haproxy:3.4.4-debian13@sha256:07ff8af7d6653388ebbb22a503144e393504f99fdc54c19dcbdd379b2215946a
+              name: haproxy-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/haproxytech/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/haproxy
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          with:
+            chart: ${source.dir}/helm-charts/haproxy
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts
+          with:
+            chart: haproxy
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: ${source.dir}/helm-charts/haproxy
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/haproxy/config

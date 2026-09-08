@@ -1,0 +1,93 @@
+# syntax=dhi.io/build:2-helm3
+
+name: NGINX Ingress Helm chart 2.x
+image: dhi.io/nginx-ingress-chart
+variant: helm
+tags:
+  - 2.7.1
+platforms:
+  - linux/amd64
+vars:
+  APP_VERSION: 5.6.1
+  CHART_COMMIT_SHA: a9339c30a94fd59c32dc0b4f779c48771faaf1d4
+  CHART_HELM_NAME: nginx-ingress-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  NGINX_INGRESS_REFERENCE: dhi/nginx-ingress:5.6.1-debian13@sha256:1c77f165da352af5c6a3bbb579a423b086407b2499a00d57cabdf6a8ed5ea74c
+  SEMVER_MAJOR_MINOR_VERSION: "2.7"
+  SEMVER_MAJOR_VERSION: "2"
+  SEMVER_VERSION: 2.7.1
+  VERSION: 2.7.1
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: nginx-ingress-chart
+      work-dir: ${source.dir}/helm-charts/charts/nginx-ingress
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/nginx/kubernetes-ingress.git#v5.6.1
+            checksum: a9339c30a94fd59c32dc0b4f779c48771faaf1d4
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          with:
+            chart:
+              appRef: nginx-ingress
+              description: Docker Hardened Images Helm chart for NGINX Ingress Controller
+              images:
+                - name: nginx-ingress
+                  ref: dhi/nginx-ingress:5.6.1-debian13@sha256:1c77f165da352af5c6a3bbb579a423b086407b2499a00d57cabdf6a8ed5ea74c
+              name: nginx-ingress-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/nginx/kubernetes-ingress
+            cmd: prepare
+            registry: dhi.io
+        - name: remove plus config
+          runs: |
+            set -eux -o pipefail
+
+            rm values-icp.yaml
+            rm values-plus.yaml
+        - name: relocate chart
+          uses: helm/rudder@v1
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: lint
+          uses: helm/cmd@v1
+          privileged: true
+          with:
+            chart: .
+            cmd: lint .
+        - name: remove schema
+          runs: |
+            set -eux -o pipefail
+
+            rm values.schema.json
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: .
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/nginx-ingress/config

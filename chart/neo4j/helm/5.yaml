@@ -1,0 +1,98 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Neo4j Helm chart 5.x
+image: dhi.io/neo4j-chart
+variant: helm
+tags:
+  - 5.26.30
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: 57e964931c9cd3ae700605db8ee388c2a76f12b1
+  CHART_HELM_NAME: neo4j-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  KUBECTL_REFERENCE: dhi/kubectl:1.34.11-alpine3.22-dev@sha256:a96f521566b510072e2eddcacec149b9a62a2e6ce735f1df5073107b5fa4db3c
+  NEO4J_REFERENCE: dhi/neo4j:5.26.30-debian13@sha256:5053b3508085a480cd9793c3f47fb9ebbd211c650d77deca281a4c330b7cfef4
+  SEMVER_MAJOR_MINOR_VERSION: "5.26"
+  SEMVER_MAJOR_VERSION: "5"
+  SEMVER_VERSION: 5.26.30
+  VERSION: 5.26.30
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: neo4j
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - sed
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/neo4j/helm-charts.git#5.26.30
+            checksum: 57e964931c9cd3ae700605db8ee388c2a76f12b1
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/neo4j
+          with:
+            chart:
+              appRef: neo4j
+              description: Docker Hardened Images Helm chart for Neo4j
+              images:
+                - name: neo4j
+                  ref: dhi/neo4j:5.26.30-debian13@sha256:5053b3508085a480cd9793c3f47fb9ebbd211c650d77deca281a4c330b7cfef4
+                - name: kubectl
+                  ref: dhi/kubectl:1.34.11-alpine3.22-dev@sha256:a96f521566b510072e2eddcacec149b9a62a2e6ce735f1df5073107b5fa4db3c
+              name: neo4j-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/neo4j/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: update chart values
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/neo4j
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          with:
+            chart: ${source.dir}/helm-charts/neo4j
+            cmd: dependency update
+        - name: blank 3rd party images
+          work-dir: ${source.dir}/helm-charts/neo4j
+          runs: |
+            set -eux -o pipefail
+
+            # Blank out the 3rd party images for neo4j-operations
+            sed -i '/- name: .*-operations/{n;s/^\([[:space:]]*image:\).*/\1 "" #THIS IMAGE IS NOT IN THE DHI CATALOG YET, PLEASE CONTACT THE DOCKER TEAM IF NEEDED/;}' ./templates/neo4j-operations.yaml
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts
+          with:
+            chart: neo4j
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: ${source.dir}/helm-charts/neo4j
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/neo4j/config

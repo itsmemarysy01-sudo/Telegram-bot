@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/docker-hardened-images/definitions/blob/main/.info.spec.json",
+  "properties": {
+    "metadata": {
+      "properties": {
+        "display-name": {
+          "type": "string"
+        },
+        "short-description": {
+          "type": "string"
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "fips-compliant": {
+          "type": "boolean"
+        },
+        "fips-modules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "stig-certified": {
+          "type": "boolean"
+        },
+        "home-url": {
+          "type": "string"
+        },
+        "categories": {
+          "items": {
+            "type": "string",
+            "enum": [
+              "networking",
+              "security",
+              "languages-and-frameworks",
+              "integration-and-delivery",
+              "message-queues",
+              "api-management",
+              "internet-of-things",
+              "machine-learning-and-ai",
+              "developer-tools",
+              "data-science",
+              "web-servers",
+              "operating-systems",
+              "content-management-system",
+              "databases-and-storage",
+              "monitoring-and-observability",
+              "web-analytics"
+            ]
+          },
+          "type": "array"
+        },
+        "alternatives": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "included-tools": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "description"
+            ]
+          },
+          "type": "array"
+        },
+        "advisories": {
+          "items": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "github_advisories",
+                  "github",
+                  "nist"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "osv",
+                  "node",
+                  "nist"
+                ]
+              },
+              "match": {
+                "type": "string"
+              },
+              "exclusions": {
+                "items": {
+                  "properties": {
+                    "package": {
+                      "type": "string"
+                    },
+                    "ecosystem": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "packages": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "type",
+              "source",
+              "format"
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "display-name",
+        "short-description",
+        "featured",
+        "fips-compliant",
+        "fips-modules",
+        "stig-certified",
+        "home-url",
+        "categories",
+        "alternatives"
+      ]
+    },
+    "advisories": {
+      "items": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "github_advisories",
+              "github",
+              "nist"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "github",
+              "osv",
+              "node",
+              "nist"
+            ]
+          },
+          "match": {
+            "type": "string"
+          },
+          "exclusions": {
+            "items": {
+              "properties": {
+                "package": {
+                  "type": "string"
+                },
+                "ecosystem": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "packages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "source",
+          "format"
+        ]
+      },
+      "type": "array"
+    },
+    "track-ignore": {
+      "items": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "github_tag"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "owner",
+          "repo",
+          "match"
+        ]
+      },
+      "type": "array"
+    },
+    "vex-sources": {
+      "items": {
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "tuxcare-csaf"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "purl": {
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "namespace": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "versionRegex": {
+                "type": "string"
+              },
+              "keepQualifiers": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "packages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "packageVersionRef": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "format",
+          "url",
+          "purl",
+          "destination",
+          "packages",
+          "packageVersionRef"
+        ]
+      },
+      "type": "array"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "metadata"
+  ],
+  "title": "DHI repository info",
+  "description": "A specification for Docker Hardened Image (DHI) repository information"
+}

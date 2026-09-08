@@ -1,0 +1,248 @@
+# syntax=dhi.io/build:2-debian13
+
+name: Jupyter Data Science Notebook 2026.07.x
+image: dhi.io/datascience-notebook
+variant: runtime
+tags:
+  - "2026"
+  - "2026.07"
+  - 2026.07.28
+  - 2026-debian
+  - 2026.07.28-2
+  - 2026-debian13
+  - 2026.07-debian
+  - 2026.07-debian13
+  - 2026.07.28-debian
+  - 2026.07.28-2-debian
+  - 2026.07.28-debian13
+  - 2026.07.28-2-debian13
+platforms:
+  - linux/amd64
+  - linux/arm64
+dates:
+  release: "2026-05-11"
+vars:
+  DEBIAN_EPOCH_MAJOR_MINOR_VERSION: "2026.07"
+  DEBIAN_EPOCH_MAJOR_VERSION: "2026"
+  DEBIAN_EPOCH_VERSION: 2026.07.28
+  JULIA_VERSION: 1.12.6
+  VERSION: 2026.07.28-2
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  packages:
+    - '!libelogind0'
+    - '!mawk'
+    - '!original-awk'
+    - base-files
+    - bash
+    - ca-certificates
+    - ca-certificates-bundle
+    - coreutils
+    - debianutils
+    - findutils
+    - grep
+    - locales
+    - tini
+    - tzdata
+  builds:
+    - name: datascience-notebook
+      contents:
+        repositories:
+          - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+        keyring:
+          - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+        packages:
+          - base-files
+          - bash
+          - coreutils
+          - datascience-notebook=2026.07.28-2
+      pipeline:
+        - name: install
+          privileged: true
+          runs: |
+            set -eux -o pipefail
+
+            mkdir -p /usr/lib/datascience-notebook/start-notebook.d
+
+            /opt/conda/bin/python -c '
+            import importlib.metadata as m
+            import os
+            import urllib.request
+
+            import jupyterlab
+
+            jl_dir = os.path.dirname(jupyterlab.__file__)
+            jl_ver = m.version("jupyterlab")
+            staging = os.path.join(jl_dir, "staging")
+            os.makedirs(staging, exist_ok=True)
+            url = (
+                "https://raw.githubusercontent.com/jupyterlab/jupyterlab/v"
+                f"{jl_ver}/jupyterlab/staging/package.json"
+            )
+            dest = os.path.join(staging, "package.json")
+            with urllib.request.urlopen(url) as resp, open(dest, "wb") as out:
+                out.write(resp.read())
+            '
+
+            nb_ver="$(/opt/conda/bin/python -c 'import importlib.metadata as m; print(m.version("nbclassic"))')"
+            /opt/conda/bin/pip install \
+              --root-user-action=ignore \
+              --force-reinstall \
+              --no-deps \
+              "nbclassic==${nb_ver}"
+
+            chown -R 1000:100 /opt/julia
+      outputs:
+        - source: /opt/conda
+          target: /opt/conda
+          uid: 0
+          gid: 0
+        - source: /opt/julia-1.12.6
+          target: /opt/julia-1.12.6
+          uid: 0
+          gid: 0
+        - source: /opt/julia
+          target: /opt/julia
+          uid: 0
+          gid: 0
+        - source: /usr/lib/datascience-notebook
+          target: /usr/lib/datascience-notebook
+          uid: 0
+          gid: 0
+        - source: /usr/bin/start.sh
+          target: /usr/bin/start.sh
+          uid: 0
+          gid: 0
+        - source: /usr/bin/start-notebook.sh
+          target: /usr/bin/start-notebook.sh
+          uid: 0
+          gid: 0
+        - source: /usr/bin/start-singleuser.sh
+          target: /usr/bin/start-singleuser.sh
+          uid: 0
+          gid: 0
+        - source: /usr/bin/start-notebook.py
+          target: /usr/bin/start-notebook.py
+          uid: 0
+          gid: 0
+        - source: /usr/bin/start-singleuser.py
+          target: /usr/bin/start-singleuser.py
+          uid: 0
+          gid: 0
+        - source: /etc/jupyter
+          target: /etc/jupyter
+          uid: 0
+          gid: 0
+        - source: /opt/docker/sbom
+          target: /opt/docker/sbom
+          uid: 0
+          gid: 0
+accounts:
+  run-as: jovyan
+  users:
+    - name: jovyan
+      uid: 1000
+      gid: 100
+  groups:
+    - name: users
+      gid: 100
+os-release:
+  name: Docker Hardened Images (Debian)
+  id: debian
+  version-id: "13"
+  version-codename: trixie
+  pretty-name: Docker Hardened Images/Debian GNU/Linux 13 (trixie)
+  home-url: https://docker.com/products/hardened-images/
+  bug-report-url: https://docker.com/support/
+work-dir: /home/jovyan
+environment:
+  CONDA_DIR: /opt/conda
+  HOME: /home/jovyan
+  LANG: C.UTF-8
+  LANGUAGE: C.UTF-8
+  LC_ALL: C.UTF-8
+  NB_GID: "100"
+  NB_UID: "1000"
+  NB_USER: jovyan
+  PATH: /opt/conda/bin:/opt/julia-1.12.6/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  SHELL: /bin/bash
+paths:
+  - type: directory
+    path: /home/jovyan/work
+    uid: 1000
+    gid: 100
+    mode: "0755"
+  - type: directory
+    path: /usr/local/bin
+    uid: 0
+    gid: 0
+  - type: symlink
+    path: /usr/local/bin/start.sh
+    uid: 0
+    gid: 0
+    source: /usr/bin/start.sh
+  - type: symlink
+    path: /usr/local/bin/run-hooks.sh
+    uid: 0
+    gid: 0
+    source: /usr/lib/datascience-notebook/bin/run-hooks.sh
+  - type: symlink
+    path: /usr/local/bin/fix-permissions
+    uid: 0
+    gid: 0
+    source: /usr/lib/datascience-notebook/bin/fix-permissions
+  - type: symlink
+    path: /usr/local/bin/_docker_stacks_log.sh
+    uid: 0
+    gid: 0
+    source: /usr/lib/datascience-notebook/bin/_docker_stacks_log.sh
+  - type: symlink
+    path: /usr/local/bin/start-notebook.py
+    uid: 0
+    gid: 0
+    source: /usr/bin/start-notebook.py
+  - type: symlink
+    path: /usr/local/bin/start-notebook.sh
+    uid: 0
+    gid: 0
+    source: /usr/bin/start-notebook.sh
+  - type: symlink
+    path: /usr/local/bin/start-singleuser.py
+    uid: 0
+    gid: 0
+    source: /usr/bin/start-singleuser.py
+  - type: symlink
+    path: /usr/local/bin/start-singleuser.sh
+    uid: 0
+    gid: 0
+    source: /usr/bin/start-singleuser.sh
+  - type: symlink
+    path: /usr/local/bin/start-notebook.d
+    uid: 0
+    gid: 0
+    source: /usr/lib/datascience-notebook/start-notebook.d
+  - type: symlink
+    path: /usr/local/bin/before-notebook.d
+    uid: 0
+    gid: 0
+    source: /usr/lib/datascience-notebook/before-notebook.d
+  - type: symlink
+    path: /usr/bin/which
+    uid: 0
+    gid: 0
+    source: /opt/conda/bin/which
+annotations:
+  org.opencontainers.image.description: A minimal Jupyter Data Science Notebook image
+  org.opencontainers.image.licenses: BSD-3-Clause
+entrypoint:
+  - tini
+  - -g
+  - --
+  - start.sh
+cmd:
+  - start-notebook.py
+ports:
+  - 8888/tcp

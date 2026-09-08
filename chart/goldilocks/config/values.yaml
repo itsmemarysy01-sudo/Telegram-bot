@@ -1,0 +1,19 @@
+image:
+  repository: ${goldilocks.registry}/${goldilocks.repository}
+  tag: ${goldilocks.tag}@${goldilocks.digest}
+
+controller:
+  podSecurityContext:
+    fsGroup: 65532
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+
+dashboard:
+  podSecurityContext:
+    fsGroup: 65532
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532

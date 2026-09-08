@@ -1,0 +1,15 @@
+image:
+  customImage: ${neo4j.registry}/${neo4j.repository}:${neo4j.tag}@${neo4j.digest}
+neo4j:
+  name: neo4j
+volumes:
+  data:
+    mode: defaultStorageClass
+services:
+  neo4j:
+    cleanup:
+      image:
+        registry: ${kubectl.registry}
+        repository: ${kubectl.repository}
+        tag: ${kubectl.tag}
+        digest: ${kubectl.digest}

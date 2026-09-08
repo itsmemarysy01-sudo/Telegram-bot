@@ -1,0 +1,58 @@
+image:
+  registry: ${redis.registry}
+  repository: ${redis.repository}
+  tag: ${redis.tag}
+  digest: ${redis.digest}
+metrics:
+  image:
+    registry:  ${redis-exporter.registry}
+    repository: ${redis-exporter.repository}
+    tag: ${redis-exporter.tag}
+    digest: ${redis-exporter.digest}
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+volumePermissions:
+  image:
+    registry: ${bash.registry}
+    repository: ${bash.repository}
+    tag: ${bash.tag}
+    digest: ${bash.digest}
+  containerSecurityContext:
+    runAsUser: 0
+kubectl:
+  image:
+    registry: ${kubectl.registry}
+    repository: ${kubectl.repository}
+    tag: ${kubectl.tag}
+    digest: ${kubectl.digest}
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+sysctl:
+  image:
+    registry: ${bash.registry}
+    repository: ${bash.repository}
+    tag: ${bash.tag}
+    digest: ${bash.digest}
+sentinel:
+  image:
+    registry: ${redis.registry}
+    repository: ${redis.repository}
+    tag: ${redis.tag}
+    digest: ${redis.digest}
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+master:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+replica:
+  podSecurityContext:
+    fsGroup: 65532
+  containerSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532

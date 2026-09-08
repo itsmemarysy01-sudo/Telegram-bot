@@ -1,0 +1,38 @@
+image:
+  registry: ${kyverno-policy-reporter.registry}
+  repository: ${kyverno-policy-reporter.repository}
+  tag: ${kyverno-policy-reporter.tag}@${kyverno-policy-reporter.digest}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+
+podSecurityContext:
+  fsGroup: 65532
+
+ui:
+  enabled: false
+  image:
+    registry: ${kyverno-policy-reporter-ui.registry}
+    repository: ${kyverno-policy-reporter-ui.repository}
+    tag: ${kyverno-policy-reporter-ui.tag}@${kyverno-policy-reporter-ui.digest}
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+
+  podSecurityContext:
+    fsGroup: 65532
+    runAsUser: 65532
+    runAsGroup: 65532
+
+plugin:
+  trivy:
+    cli:
+      image:
+        registry: ${trivy.registry}
+        repository: ${trivy.repository}
+        pullPolicy: IfNotPresent
+        tag: ${trivy.tag}@${trivy.digest}

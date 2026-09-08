@@ -1,0 +1,91 @@
+# syntax=dhi.io/build:2-helm3
+
+name: Kube State Metrics Helm chart 8.x
+image: dhi.io/kube-state-metrics-chart
+variant: helm
+tags:
+  - 8.4.2
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: 72433c08729b08ae6d4697bfdc43c67b9a8522d5
+  CHART_HELM_NAME: kube-state-metrics-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  KUBE_RBAC_PROXY_REFERENCE: dhi/kube-rbac-proxy:0.22.1-debian13@sha256:60298c42c2d0ad1da97500834192c80498b9266a98ca03796f0ac331a8a2030b
+  KUBE_STATE_METRICS_REFERENCE: dhi/kube-state-metrics:2.20.0-debian13@sha256:5b4a4c21c89bdc9137a7b9e83e540eb5b16be5e82ad215a1eab1d9fed7a74024
+  SEMVER_MAJOR_MINOR_VERSION: "8.4"
+  SEMVER_MAJOR_VERSION: "8"
+  SEMVER_VERSION: 8.4.2
+  VERSION: 8.4.2
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: kube-state-metrics-chart
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/prometheus-community/helm-charts.git#kube-state-metrics-8.4.2
+            checksum: 72433c08729b08ae6d4697bfdc43c67b9a8522d5
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/kube-state-metrics
+          with:
+            chart:
+              appRef: kube-state-metrics
+              description: Docker Hardened Images Helm chart for Kube State Metrics
+              images:
+                - name: kube-state-metrics
+                  ref: dhi/kube-state-metrics:2.20.0-debian13@sha256:5b4a4c21c89bdc9137a7b9e83e540eb5b16be5e82ad215a1eab1d9fed7a74024
+                - name: kube-rbac-proxy
+                  ref: dhi/kube-rbac-proxy:0.22.1-debian13@sha256:60298c42c2d0ad1da97500834192c80498b9266a98ca03796f0ac331a8a2030b
+              name: kube-state-metrics-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/prometheus-community/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/kube-state-metrics
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          privileged: true
+          with:
+            chart: ${source.dir}/helm-charts/charts/kube-state-metrics
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: kube-state-metrics
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: ${source.dir}/helm-charts/charts/kube-state-metrics
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/kube-state-metrics/config

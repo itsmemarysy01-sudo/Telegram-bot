@@ -1,0 +1,116 @@
+# syntax=dhi.io/build:2-helm3
+
+name: VictoriaMetrics Cluster Helm chart 0.x
+image: dhi.io/victoriametrics-cluster-chart
+variant: helm
+tags:
+  - 0.49.0
+platforms:
+  - linux/amd64
+vars:
+  CHART_COMMIT_SHA: 930509bd292a9ccd3b1bee6710441dabb3e12e4c
+  CHART_HELM_NAME: victoriametrics-cluster-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "0.49"
+  SEMVER_MAJOR_VERSION: "0"
+  SEMVER_VERSION: 0.49.0
+  VERSION: 0.49.0
+  VICTORIAMETRICS_VMAUTH_REFERENCE: dhi/victoriametrics-vmauth:1.151.0-debian13@sha256:1336072142f4d55808f7ca1ead4e647efa938280e7d0e2b62a1b7cc6b606b9f8
+  VICTORIAMETRICS_VMINSERT_REFERENCE: dhi/victoriametrics-vminsert:1.151.0-debian13@sha256:b7c112c26424b26e5545c220141c3aaba7544a58e0300ff3723c02e069ce5525
+  VICTORIAMETRICS_VMSELECT_REFERENCE: dhi/victoriametrics-vmselect:1.151.0-debian13@sha256:12797cb26f6ebf704bb16a3988271478a2c6ad0c9349f8aa1b40c69e84ef94aa
+  VICTORIAMETRICS_VMSTORAGE_REFERENCE: dhi/victoriametrics-vmstorage:1.151.0-debian13@sha256:83982e66e1e740c751c0e4361469a39c7f3e376bd1fa914f0ec4417af8ed600d
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: victoriametrics-cluster-chart
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - sed
+          - yq-go
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/VictoriaMetrics/helm-charts.git#victoria-metrics-cluster-0.49.0
+            checksum: 930509bd292a9ccd3b1bee6710441dabb3e12e4c
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/victoria-metrics-cluster
+          with:
+            chart:
+              appRef: victoriametrics-vmselect
+              description: Docker Hardened Images Helm chart for VictoriaMetrics Cluster
+              images:
+                - name: victoriametrics-vmselect
+                  ref: dhi/victoriametrics-vmselect:1.151.0-debian13@sha256:12797cb26f6ebf704bb16a3988271478a2c6ad0c9349f8aa1b40c69e84ef94aa
+                - name: victoriametrics-vmstorage
+                  ref: dhi/victoriametrics-vmstorage:1.151.0-debian13@sha256:83982e66e1e740c751c0e4361469a39c7f3e376bd1fa914f0ec4417af8ed600d
+                - name: victoriametrics-vminsert
+                  ref: dhi/victoriametrics-vminsert:1.151.0-debian13@sha256:b7c112c26424b26e5545c220141c3aaba7544a58e0300ff3723c02e069ce5525
+                - name: victoriametrics-vmauth
+                  ref: dhi/victoriametrics-vmauth:1.151.0-debian13@sha256:1336072142f4d55808f7ca1ead4e647efa938280e7d0e2b62a1b7cc6b606b9f8
+              name: victoriametrics-cluster-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/VictoriaMetrics/helm-charts
+            cmd: prepare
+            registry: dhi.io
+        - name: update chart values
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/victoria-metrics-cluster
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update sidecar values
+          uses: yq/patch@v1
+          with:
+            file: ${source.dir}/helm-charts/charts/victoria-metrics-cluster/values-sidecar.yaml
+            patches:
+              - .extraContainers[0].image = "dhi/victoriametrics-vmauth:1.151.0-debian13@sha256:1336072142f4d55808f7ca1ead4e647efa938280e7d0e2b62a1b7cc6b606b9f8"
+              - .extraContainers[0].securityContext.enabled = true
+              - .extraContainers[0].securityContext.runAsNonRoot = true
+              - .extraContainers[0].securityContext.runAsUser = 65532
+              - .extraContainers[0].securityContext.runAsGroup = 65532
+        - name: blank 3rd party images
+          work-dir: ${source.dir}/helm-charts/charts/victoria-metrics-cluster
+          runs: |
+            set -eux -o pipefail
+
+            # Blank out the 3rd party images for victoriametrics/vmbackupmanager
+            sed -i '/- name: vmbackupmanager/{n;s/^\([[:space:]]*image:\).*/\1 "" #THIS IMAGE IS NOT IN THE DHI CATALOG YET, PLEASE CONTACT THE DOCKER TEAM IF NEEDED/;}' ./templates/vmstorage-server.yaml
+        - name: update dependencies
+          uses: helm/cmd@v1
+          privileged: true
+          with:
+            chart: ${source.dir}/helm-charts/charts/victoria-metrics-cluster
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: victoria-metrics-cluster
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          with:
+            chart: ${source.dir}/helm-charts/charts/victoria-metrics-cluster
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/victoriametrics-cluster/config

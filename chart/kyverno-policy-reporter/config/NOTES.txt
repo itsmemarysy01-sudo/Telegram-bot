@@ -1,0 +1,40 @@
+===============================================================================
+ 🐳  {{ .Chart.Name | upper }}  —  A Docker Hardened Helm Chart
+===============================================================================
+
+This is a {{ .Chart.Name }} Docker Helm chart built from the upstream Kyverno
+{{ .Chart.Name }} Helm chart while using a hardened configuration with
+**Docker Hardened Images**.
+
+To learn more about how to use this Helm chart, visit the upstream documentation:
+{{ .Chart.Home }}
+===============================================================================
+
+⭐ Kyverno Policy Reporter has been deployed!
+
+Release:      {{ .Release.Name }}
+Namespace:    {{ .Release.Namespace }}
+Chart:        {{ .Chart.Name }} {{ .Chart.Version }}
+App version:  {{ .Chart.AppVersion }}
+
+📊 Check Policy Reporter status:
+
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name=policy-reporter,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+ℹ️ Checkout the getting started guides at: {{ .Chart.Home }}
+
+🧹 Uninstall
+$ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+===============================================================================

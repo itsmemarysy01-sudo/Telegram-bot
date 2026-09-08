@@ -1,0 +1,118 @@
+# syntax=dhi.io/build:2-helm3
+
+name: APISIX Helm chart 2.x
+image: dhi.io/apisix-chart
+variant: helm
+tags:
+  - 2.17.0
+platforms:
+  - linux/amd64
+vars:
+  APISIX_INGRESS_CONTROLLER_CHART_REFERENCE: dhi/apisix-ingress-controller-chart:1.3.0@sha256:9f567f0c24c74fadfe5d7eeafe1a593d6411bd4513b27ad60a1801d3aa43dbe6
+  APISIX_REFERENCE: dhi/apisix:3.18.0-debian13@sha256:96df840f99fcdc71de0a747763dab12749ed4b97d36acd3da5cf41ebda05b6e6
+  BUSYBOX_REFERENCE: dhi/busybox:1.37.0-debian13@sha256:eb0e5b0b63bf4f8570e9d7d1787fc6c3be218dae07035de8fe41497778aa3338
+  CHART_COMMIT_SHA: d166ba101f9bdb7e08bc902ff757647421bbd57f
+  CHART_HELM_NAME: apisix-chart
+  DHI_NAMESPACE: dhi
+  DHI_PREFIX: ""
+  DHI_REGISTRY: dhi.io
+  DHI_SKIP_CONTEXT_COPY: "true"
+  HELM_VERSION: 4.1.4-2
+  SEMVER_MAJOR_MINOR_VERSION: "2.17"
+  SEMVER_MAJOR_VERSION: "2"
+  SEMVER_VERSION: 2.17.0
+  VERSION: 2.17.0
+contents:
+  repositories:
+    - deb [signed-by=/usr/share/keyrings/dhi-deb-main.gpg] http://dhi.io/deb/debian/main trixie main
+  keyring:
+    - https://dhi.io/keyring/dhi-deb-gpg.D46852F6925E9F71.key
+  builds:
+    - name: apisix-chart
+      contents:
+        packages:
+          - bash
+          - ca-certificates
+          - coreutils
+          - patch
+          - yq-go
+          - helm=4.1.4-2
+        files:
+          - url: git+https://github.com/apache/apisix-helm-chart.git#apisix-2.17.0
+            checksum: d166ba101f9bdb7e08bc902ff757647421bbd57f
+            path: ${source.dir}/helm-charts
+            uid: 0
+            gid: 0
+      pipeline:
+        - name: prepare chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/apisix
+          with:
+            chart:
+              appRef: apisix
+              dependencies:
+                - alias: ingress-controller
+                  condition: ingress-controller.enabled
+                  name: apisix-ingress-controller-chart
+                  ref: dhi/apisix-ingress-controller-chart:1.3.0@sha256:9f567f0c24c74fadfe5d7eeafe1a593d6411bd4513b27ad60a1801d3aa43dbe6
+              description: Docker Hardened Images Helm chart for APISIX
+              images:
+                - name: apisix
+                  ref: dhi/apisix:3.18.0-debian13@sha256:96df840f99fcdc71de0a747763dab12749ed4b97d36acd3da5cf41ebda05b6e6
+                - name: busybox
+                  ref: dhi/busybox:1.37.0-debian13@sha256:eb0e5b0b63bf4f8570e9d7d1787fc6c3be218dae07035de8fe41497778aa3338
+              name: apisix-chart
+              notes: ${source.dir}/config/NOTES.txt
+              sourceUrl: https://github.com/apache/apisix
+            cmd: prepare
+            registry: dhi.io
+        - name: relocate chart
+          uses: helm/rudder@v1
+          work-dir: ${source.dir}/helm-charts/charts/apisix
+          with:
+            cmd: patch
+            patches:
+              from: ${source.dir}/config
+            registry: dhi.io
+        - name: update values
+          uses: yq/patch@v1
+          work-dir: ${source.dir}/helm-charts/charts/apisix
+          with:
+            file: values.yaml
+            patches:
+              - del(.etcd.image)
+              - del(.etcd.auth.rbac)
+              - del(.etcd.containerSecurityContext)
+              - del(.etcd.service)
+              - del(.etcd.replicaCount)
+              - del(.etcd.autoCompactionRetention)
+              - del(.etcd.autoCompactionMode)
+        - name: helm login
+          uses: helm/login@v1
+          with:
+            registry: dhi.io
+        - name: update dependencies
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          privileged: true
+          with:
+            chart: apisix
+            cmd: dependency update
+        - name: lint
+          uses: helm/cmd@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: apisix
+            cmd: lint .
+        - name: package
+          uses: helm/package@v1
+          work-dir: ${source.dir}/helm-charts/charts
+          with:
+            chart: apisix
+      paths:
+        - type: directory
+          path: ${source.dir}/config
+          uid: 0
+          gid: 0
+          mode: "0644"
+          source: chart/apisix/config

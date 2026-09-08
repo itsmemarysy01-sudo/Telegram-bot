@@ -1,0 +1,8 @@
+metadata:
+  display-name: Redis Helm Chart
+  short-description: Redis is the world's fastest data platform for caching, vector search, and NoSQL databases.
+  featured: true
+  home-url: https://redis.io/
+  categories:
+    - databases-and-storage
+    - message-queues

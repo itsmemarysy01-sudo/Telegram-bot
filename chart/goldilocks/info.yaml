@@ -1,0 +1,8 @@
+metadata:
+  display-name: Goldilocks Helm chart
+  short-description: A Kubernetes utility to identify optimal resource requests and limits using Vertical Pod Autoscalers.
+  featured: false
+  home-url: https://github.com/FairwindsOps/charts/tree/master/stable/goldilocks
+  categories:
+    - developer-tools
+    - security
